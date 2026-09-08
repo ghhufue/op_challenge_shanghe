@@ -12,6 +12,13 @@ data = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(data)
 
 
+def read_result(log_path):
+    for line in reversed(log_path.read_text(encoding="utf-8", errors="replace").splitlines()):
+        if line.startswith("RESULT_JSON "):
+            return json.loads(line.removeprefix("RESULT_JSON "))
+    raise ValueError("Executable did not emit RESULT_JSON")
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--exe", required=True, type=Path)
@@ -20,6 +27,8 @@ def main():
     p.add_argument("--case-id", action="append", help="Exact ID or base ID prefix; may repeat")
     p.add_argument("--data-root", type=Path, default=ROOT / "test_data")
     p.add_argument("--repeats", type=int, default=2)
+    p.add_argument("--warmups", type=int, default=0)
+    p.add_argument("--tiling-key", type=int, help="Force one implemented key in the local tuning build")
     p.add_argument("--timeout", type=int, default=300)
     p.add_argument("--report", type=Path, default=ROOT / "test_results.json")
     args = p.parse_args()
@@ -41,15 +50,20 @@ def main():
         command = ["bash", str(Path(__file__).with_name("launch.sh").resolve()), args.cann_root,
                    str(args.exe.resolve()), str(directory), *[str(c[k]) for k in ["B", "M", "N", "K"]],
                    c["dtype"], str(int(c["transposeX1"])), str(int(c["transposeX2"])), str(args.repeats)]
+        if args.warmups:
+            command.extend([str(args.tiling_key if args.tiling_key is not None else -1), str(args.warmups)])
+        elif args.tiling_key is not None:
+            command.append(str(args.tiling_key))
         print(f"RUN {c['id']}", flush=True)
         start = time.monotonic()
-        entry = dict(id=c["id"], passed=False)
+        entry = dict(c, passed=False)
         try:
             with (directory / "execution.log").open("wb") as log:
                 result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=args.timeout)
             if result.returncode:
                 raise RuntimeError(f"Executable exited {result.returncode}; see execution.log")
             data.verify(directory)
+            entry.update(read_result(directory / "execution.log"))
             entry["passed"] = True
         except (OSError, ValueError, RuntimeError, subprocess.TimeoutExpired) as error:
             entry["error"] = str(error)

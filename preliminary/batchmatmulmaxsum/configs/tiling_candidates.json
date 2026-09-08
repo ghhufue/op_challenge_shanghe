@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "candidates": [
+    {
+      "key": 0,
+      "symbol": "VECTOR_REFERENCE",
+      "name": "vector_reference",
+      "path": "reference",
+      "implemented": true,
+      "tile_m": 1,
+      "tile_n": 1,
+      "tile_k": 1,
+      "vec_m": 1,
+      "vec_n": 1,
+      "split_n": 1
+    },
+    {
+      "key": 100,
+      "symbol": "BM_16X128X64",
+      "name": "bm_16x128x64",
+      "path": "bm",
+      "implemented": false,
+      "tile_m": 16,
+      "tile_n": 128,
+      "tile_k": 64,
+      "vec_m": 16,
+      "vec_n": 128,
+      "split_n": 1
+    },
+    {
+      "key": 101,
+      "symbol": "BM_32X128X64",
+      "name": "bm_32x128x64",
+      "path": "bm",
+      "implemented": false,
+      "tile_m": 32,
+      "tile_n": 128,
+      "tile_k": 64,
+      "vec_m": 32,
+      "vec_n": 128,
+      "split_n": 1
+    },
+    {
+      "key": 102,
+      "symbol": "BM_32X256X64",
+      "name": "bm_32x256x64",
+      "path": "bm",
+      "implemented": false,
+      "tile_m": 32,
+      "tile_n": 256,
+      "tile_k": 64,
+      "vec_m": 32,
+      "vec_n": 128,
+      "split_n": 1
+    },
+    {
+      "key": 103,
+      "symbol": "BM_64X128X128",
+      "name": "bm_64x128x128",
+      "path": "bm",
+      "implemented": false,
+      "tile_m": 64,
+      "tile_n": 128,
+      "tile_k": 128,
+      "vec_m": 32,
+      "vec_n": 128,
+      "split_n": 1
+    },
+    {
+      "key": 200,
+      "symbol": "BMN_16X256X64_P2",
+      "name": "bmn_16x256x64_p2",
+      "path": "bmn",
+      "implemented": false,
+      "tile_m": 16,
+      "tile_n": 256,
+      "tile_k": 64,
+      "vec_m": 16,
+      "vec_n": 128,
+      "split_n": 2
+    },
+    {
+      "key": 201,
+      "symbol": "BMN_16X256X64_P4",
+      "name": "bmn_16x256x64_p4",
+      "path": "bmn",
+      "implemented": false,
+      "tile_m": 16,
+      "tile_n": 256,
+      "tile_k": 64,
+      "vec_m": 16,
+      "vec_n": 128,
+      "split_n": 4
+    }
+  ]
+}
