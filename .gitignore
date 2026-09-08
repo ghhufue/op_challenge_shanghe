@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+preliminary/.venv/
+preliminary/test_data/
+preliminary/test_results*.json
+preliminary/batchmatmulmaxsum_template/build*/
+
