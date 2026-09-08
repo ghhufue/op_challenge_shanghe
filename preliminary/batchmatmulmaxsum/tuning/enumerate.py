@@ -41,7 +41,7 @@ def _materialize(
         task_count = problem.b * problem.m
         split_m = min(problem.m, hardware.aiv)
         launch_blocks = min(task_count, hardware.aiv)
-        workspace_bytes = task_count * 4
+        workspace_bytes = ceil_div(problem.b, 8) * 8 * 4
         return CandidatePlan(
             config, split_m, 1, task_count, launch_blocks,
             1, problem.n, workspace_bytes, memory, 0.0,
@@ -55,7 +55,8 @@ def _materialize(
         row_max_bytes = problem.b * problem.m * 4
         stage_offset = ceil_div(row_max_bytes, 512) * 512
         stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
-        workspace_bytes = stage_offset + stage_bytes
+        atomic_bytes = ceil_div(problem.b, 8) * 8 * 4
+        workspace_bytes = stage_offset + stage_bytes + atomic_bytes
         score = _estimate(problem, config, launch_blocks, hardware.aic)
         return CandidatePlan(
             config, split_m, 1, task_count, launch_blocks,

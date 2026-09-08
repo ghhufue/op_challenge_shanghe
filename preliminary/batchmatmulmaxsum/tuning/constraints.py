@@ -11,7 +11,9 @@ def memory_usage(
     policy: BufferPolicy,
 ) -> MemoryUsage:
     if config.path == "reference":
-        return MemoryUsage(0, 0, 0, 0, 0, True)
+        atomic_local = 64 * 4
+        return MemoryUsage(0, 0, 0, 0, atomic_local,
+                           atomic_local <= hardware.ub_bytes - policy.ub_reserve_bytes)
 
     input_bytes = 2
     accumulator_bytes = 4
@@ -28,6 +30,7 @@ def memory_usage(
         policy.ub_input_buffers * vec_tile
         + config.vec_m * accumulator_bytes
         + policy.ub_row_buffers * config.vec_m * accumulator_bytes
+        + 64 * accumulator_bytes
         + policy.ub_extra_scratch_bytes
     )
 

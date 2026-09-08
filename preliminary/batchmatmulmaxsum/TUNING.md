@@ -44,9 +44,10 @@ after the corresponding kernel path exists and passes forced-path tests.
 `BM_16X128X64` (key 100) is the first Cube baseline. Each AIC computes one
 compact FP32 `16 x 128` tile; an AIV kernel folds that tile into the persistent
 `B x M` row maxima. Tiles are processed in core-sized waves, so its workspace is
-the aligned row-max buffer plus one staging tile per active AIC, rather than a
-full `B x M x N` matrix. Force key 100 locally to validate and benchmark it;
-the production policy intentionally remains on key 0 for now.
+the aligned row-max buffer, one staging tile per active AIC, and a padded atomic
+output accumulator, rather than a full `B x M x N` matrix. Force key 100 locally
+to validate and benchmark it; the production policy intentionally remains on
+key 0 for now.
 
 The production policy is kept in `tiling/generated_policy.inc`. It must select
 only implemented keys and always retain a legal general fallback. Derive its

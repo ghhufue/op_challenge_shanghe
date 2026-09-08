@@ -28,11 +28,11 @@ class CatalogTests(unittest.TestCase):
 
 
 class EnumerationTests(unittest.TestCase):
-    def test_reference_workspace_matches_row_count(self):
+    def test_reference_workspace_is_padded_atomic_output(self):
         problem = Problem(2, 17, 33, 40)
         plans = enumerate_plans(problem, implemented_only=True)
         reference = next(plan for plan in plans if plan.config.key == 0)
-        self.assertEqual(reference.workspace_bytes, 2 * 17 * 4)
+        self.assertEqual(reference.workspace_bytes, 8 * 4)
         self.assertEqual(reference.launch_blocks, 34)
 
     def test_bm_workspace_has_row_max_and_per_core_stage(self):
@@ -43,7 +43,7 @@ class EnumerationTests(unittest.TestCase):
         bm = next(plan for plan in plans if plan.config.key == 100)
         self.assertEqual(bm.task_count, 4)
         self.assertEqual(bm.launch_blocks, 4)
-        self.assertEqual(bm.workspace_bytes, 512 + 4 * 16 * 128 * 4)
+        self.assertEqual(bm.workspace_bytes, 512 + 4 * 16 * 128 * 4 + 8 * 4)
 
     def test_n_split_does_not_create_empty_partition(self):
         plans = enumerate_plans(Problem(1, 1, 1, 32))

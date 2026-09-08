@@ -5,6 +5,11 @@
 
 namespace bmms {
 
+constexpr uint32_t kAtomicAlignmentFloats = 8;
+constexpr uint32_t kMaxOutputBatches = 64;
+static_assert(kMaxOutputBatches % kAtomicAlignmentFloats == 0,
+              "Atomic output buffer must be a whole number of 32-byte blocks");
+
 struct Shape {
     int64_t b;
     int64_t m;
