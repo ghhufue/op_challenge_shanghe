@@ -16,12 +16,13 @@ from tuning.model import Hardware, Problem  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):
-    def test_catalog_has_reference_and_first_bm_path(self):
+    def test_catalog_has_reference_and_bm_paths(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0, 100])
+        self.assertEqual([item.key for item in implemented], [0, 100, 101])
         self.assertEqual(implemented[0].path, "reference")
         self.assertEqual(implemented[1].path, "bm")
+        self.assertEqual(implemented[2].path, "bm")
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -44,6 +45,16 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(bm.task_count, 4)
         self.assertEqual(bm.launch_blocks, 4)
         self.assertEqual(bm.workspace_bytes, 512 + 4 * 16 * 128 * 4 + 8 * 4)
+
+    def test_bm32_workspace_uses_its_compile_time_tile(self):
+        hardware = Hardware(aic=20, aiv=40)
+        plans = enumerate_plans(
+            Problem(2, 33, 129, 64), hardware, implemented_only=True,
+        )
+        bm = next(plan for plan in plans if plan.config.key == 101)
+        self.assertEqual(bm.task_count, 4)
+        self.assertEqual(bm.launch_blocks, 4)
+        self.assertEqual(bm.workspace_bytes, 512 + 4 * 32 * 128 * 4 + 8 * 4)
 
     def test_n_split_does_not_create_empty_partition(self):
         plans = enumerate_plans(Problem(1, 1, 1, 32))

@@ -50,6 +50,7 @@ SUITES = {
         ("c21_square", (4, 128, 128, 128), "normalized"),
         ("c22_large_k", (1, 17, 19, 8192), "uniform"),
         ("c23_large_k_tail", (1, 17, 19, 8184), "uniform"),
+        ("c24_negative_multitile", (2, 17, 257, 40), "negative"),
     ],
     "stress": [
         ("t00_square", (1, 2048, 2048, 128), "uniform"),
@@ -199,7 +200,7 @@ def generate(case, root):
 
 
 def self_check():
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "batchmatmulmaxsum_template" / "scripts"))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "batchmatmulmaxsum" / "scripts"))
     from BatchMatmulMaxSum import impl
     all_cases = list(cases("all"))
     assert len({c["id"] for c in all_cases}) == len(all_cases)

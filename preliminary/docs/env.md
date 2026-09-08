@@ -2,6 +2,22 @@
 
 本文记录当前项目使用的昇腾 NPU 环境，供算子实现、切分策略、内存规划和性能测试参考。
 
+## 云服务器 CANN 环境
+
+| 参数 | 值 |
+| --- | --- |
+| 环境 | 云服务器 |
+| CANN 版本 | `9.0.0` |
+| `ASCEND_HOME_PATH` | `/home/developer/Ascend/cann-9.0.0` |
+| 环境初始化脚本 | `/home/developer/Ascend/cann-9.0.0/set_env.sh` |
+
+登录云服务器后使用以下命令加载与当前编译、运行一致的 CANN 环境：
+
+```bash
+export ASCEND_HOME_PATH=/home/developer/Ascend/cann-9.0.0
+source "$ASCEND_HOME_PATH/set_env.sh"
+```
+
 ## SoC 与计算资源
 
 | 参数 | 值 | 说明 |
@@ -59,7 +75,8 @@ ret = 0
 加载 CANN 环境：
 
 ```bash
-source /usr/local/Ascend/ascend-toolkit/set_env.sh
+export ASCEND_HOME_PATH=/home/developer/Ascend/cann-9.0.0
+source "$ASCEND_HOME_PATH/set_env.sh"
 ```
 
 查看 NPU 状态和设备编号：

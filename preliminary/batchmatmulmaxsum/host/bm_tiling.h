@@ -9,8 +9,10 @@
 
 namespace bmms {
 
-inline optiling::TCubeTiling MakeBm16x128x64CubeTiling(
+template<uint32_t TileM, uint32_t TileN, uint32_t TileK>
+inline optiling::TCubeTiling MakeBmCubeTiling(
         const Shape& shape, int32_t inputDtype, bool transposeX1, bool transposeX2) {
+    static_assert(TileM > 0 && TileN > 0 && TileK > 0, "BM tile sizes must be positive");
     const char* socName = aclrtGetSocName();
     if (socName == nullptr) {
         throw std::runtime_error("aclrtGetSocName returned null");
@@ -32,18 +34,20 @@ inline optiling::TCubeTiling MakeBm16x128x64CubeTiling(
                         matmul_tiling::DataType::DT_FLOAT) != 0 ||
         tiling.SetBiasType(matmul_tiling::TPosition::GM, matmul_tiling::CubeFormat::ND,
                            matmul_tiling::DataType::DT_FLOAT) != 0 ||
-        tiling.SetShape(16, 128, static_cast<int32_t>(shape.k)) != 0 ||
+        tiling.SetShape(static_cast<int32_t>(TileM), static_cast<int32_t>(TileN),
+                        static_cast<int32_t>(shape.k)) != 0 ||
         tiling.SetOrgShape(static_cast<int32_t>(shape.m), static_cast<int32_t>(shape.n),
                            static_cast<int32_t>(shape.k)) != 0 ||
-        tiling.SetFixSplit(16, 128, 64) != 0 ||
+        tiling.SetFixSplit(static_cast<int32_t>(TileM), static_cast<int32_t>(TileN),
+                           static_cast<int32_t>(TileK)) != 0 ||
         tiling.EnableBias(false) != 0 ||
         tiling.SetBufferSpace(-1, -1, -1) != 0) {
-        throw std::runtime_error("Failed to configure BM_16X128X64 Matmul tiling");
+        throw std::runtime_error("Failed to configure BM Matmul tiling");
     }
 
     optiling::TCubeTiling result;
     if (tiling.GetTiling(result) != 0) {
-        throw std::runtime_error("Failed to generate BM_16X128X64 Matmul tiling");
+        throw std::runtime_error("Failed to generate BM Matmul tiling");
     }
     return result;
 }
