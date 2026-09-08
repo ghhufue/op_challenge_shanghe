@@ -16,11 +16,12 @@ from tuning.model import Hardware, Problem  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):
-    def test_catalog_has_one_runnable_fallback(self):
+    def test_catalog_has_reference_and_first_bm_path(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0])
+        self.assertEqual([item.key for item in implemented], [0, 100])
         self.assertEqual(implemented[0].path, "reference")
+        self.assertEqual(implemented[1].path, "bm")
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -30,9 +31,19 @@ class EnumerationTests(unittest.TestCase):
     def test_reference_workspace_matches_row_count(self):
         problem = Problem(2, 17, 33, 40)
         plans = enumerate_plans(problem, implemented_only=True)
-        self.assertEqual(len(plans), 1)
-        self.assertEqual(plans[0].workspace_bytes, 2 * 17 * 4)
-        self.assertEqual(plans[0].launch_blocks, 34)
+        reference = next(plan for plan in plans if plan.config.key == 0)
+        self.assertEqual(reference.workspace_bytes, 2 * 17 * 4)
+        self.assertEqual(reference.launch_blocks, 34)
+
+    def test_bm_workspace_has_row_max_and_per_core_stage(self):
+        hardware = Hardware(aic=20, aiv=40)
+        plans = enumerate_plans(
+            Problem(2, 17, 129, 64), hardware, implemented_only=True,
+        )
+        bm = next(plan for plan in plans if plan.config.key == 100)
+        self.assertEqual(bm.task_count, 4)
+        self.assertEqual(bm.launch_blocks, 4)
+        self.assertEqual(bm.workspace_bytes, 512 + 4 * 16 * 128 * 4)
 
     def test_n_split_does_not_create_empty_partition(self):
         plans = enumerate_plans(Problem(1, 1, 1, 32))

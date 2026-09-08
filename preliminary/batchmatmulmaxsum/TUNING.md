@@ -20,6 +20,8 @@ python -m tuning.cli --B 1 --M 4096 --N 8192 --K 1024 --json
 
 Capacity checks reject impossible tiles. `estimated_score` is only a cheap
 ordering hint and must not be reported as measured performance.
+The default offline hardware profile is the 20-AIC/40-AIV competition target;
+pass explicit `Hardware` values when exploring another device.
 
 ## Benchmark implemented candidates
 
@@ -38,6 +40,13 @@ python scripts/tune_cases.py \
 Candidates with `implemented: false` can be inspected by the planner but are
 rejected by both the tuning runner and the C++ dispatcher. Change the flag only
 after the corresponding kernel path exists and passes forced-path tests.
+
+`BM_16X128X64` (key 100) is the first Cube baseline. Each AIC computes one
+compact FP32 `16 x 128` tile; an AIV kernel folds that tile into the persistent
+`B x M` row maxima. Tiles are processed in core-sized waves, so its workspace is
+the aligned row-max buffer plus one staging tile per active AIC, rather than a
+full `B x M x N` matrix. Force key 100 locally to validate and benchmark it;
+the production policy intentionally remains on key 0 for now.
 
 The production policy is kept in `tiling/generated_policy.inc`. It must select
 only implemented keys and always retain a legal general fallback. Derive its

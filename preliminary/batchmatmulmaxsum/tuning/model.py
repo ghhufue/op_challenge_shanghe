@@ -38,8 +38,8 @@ class Problem:
 
 @dataclass(frozen=True)
 class Hardware:
-    aic: int = 24
-    aiv: int = 48
+    aic: int = 20
+    aiv: int = 40
     ub_bytes: int = 192 * 1024
     l1_bytes: int = 512 * 1024
     l0a_bytes: int = 64 * 1024

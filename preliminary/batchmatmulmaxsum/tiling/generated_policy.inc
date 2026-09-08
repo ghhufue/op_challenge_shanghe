@@ -1,2 +1,2 @@
-// Generated policy body. Keep this fallback until optimized kernels are implemented.
+// Safe production fallback. Promote key 100 only after device validation and benchmarking.
 return TilingKey::VECTOR_REFERENCE;

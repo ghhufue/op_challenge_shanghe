@@ -9,7 +9,12 @@ from .constraints import memory_usage
 from .model import BufferPolicy, CandidatePlan, Hardware, Problem, TilingConfig, ceil_div
 
 
-def _estimate(problem: Problem, config: TilingConfig, launch_blocks: int) -> float:
+def _estimate(
+    problem: Problem,
+    config: TilingConfig,
+    launch_blocks: int,
+    available_aic: int,
+) -> float:
     if config.path == "reference":
         return 0.0
     useful_m = min(problem.m, config.tile_m) / config.tile_m
@@ -17,7 +22,7 @@ def _estimate(problem: Problem, config: TilingConfig, launch_blocks: int) -> flo
     useful_k = min(problem.k, config.tile_k) / config.tile_k
     macs = config.tile_m * config.tile_n * config.tile_k
     traffic = 2 * config.tile_k * (config.tile_m + config.tile_n)
-    parallelism = launch_blocks / 24.0
+    parallelism = launch_blocks / available_aic
     n_penalty = 1.0 / config.split_n
     return macs / max(traffic, 1) * math.sqrt(useful_m * useful_n * useful_k) * parallelism * n_penalty
 
@@ -43,6 +48,21 @@ def _materialize(
         )
 
     max_m_groups = ceil_div(problem.m, config.tile_m)
+    if config.path == "bm":
+        split_m = min(max_m_groups, hardware.aic)
+        task_count = problem.b * max_m_groups
+        launch_blocks = min(task_count, hardware.aic)
+        row_max_bytes = problem.b * problem.m * 4
+        stage_offset = ceil_div(row_max_bytes, 512) * 512
+        stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
+        workspace_bytes = stage_offset + stage_bytes
+        score = _estimate(problem, config, launch_blocks, hardware.aic)
+        return CandidatePlan(
+            config, split_m, 1, task_count, launch_blocks,
+            min(problem.m, config.tile_m), min(problem.n, config.tile_n),
+            workspace_bytes, memory, score,
+        )
+
     split_n = min(config.split_n, max(1, ceil_div(problem.n, config.tile_n)))
     available_per_batch_n = max(1, hardware.aic // max(1, problem.b * split_n))
     split_m = min(max_m_groups, available_per_batch_n)
@@ -55,7 +75,7 @@ def _materialize(
     else:
         workspace_bytes = problem.b * split_m * split_n * single_core_m * 4
         workspace_bytes += problem.b * split_m * 4
-    score = _estimate(problem, config, launch_blocks)
+    score = _estimate(problem, config, launch_blocks, hardware.aic)
     return CandidatePlan(
         config, split_m, split_n, task_count, launch_blocks,
         single_core_m, single_core_n, workspace_bytes, memory, score,
