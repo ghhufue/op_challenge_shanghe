@@ -2,7 +2,7 @@
 
 本文基于本仓库初赛题目和当前直接调用模板，给出从正确性实现到融合优化的执行流程。
 
-**状态：设计与测试工具已提供，NPU 算子尚未实现；本文中的性能参数均为待测候选，不是已验证的最优配置。** 官方完整 15 个测试点未在仓库中提供。本文附带的是自建回归集，不能声称等同于官方测试数据，也不能证明覆盖所有合法输入。
+**状态：P1 测试驱动和 P2 多 Vector Core 正确性基线已实现，并通过 CANN 9.1、`dav-2201`、`npu` 模式编译；P2 真机验证和 P3 Cube/Vector 融合尚未完成。本文中的性能参数均为待测候选，不是已验证的最优配置。** 官方完整 15 个测试点未在仓库中提供。本文附带的是自建回归集，不能声称等同于官方测试数据，也不能证明覆盖所有合法输入。
 
 相关文件：
 
@@ -23,7 +23,7 @@
 3. 完整本地用例读取与执行流程，逐 case 校验、重复执行、多 stream 验证。
 4. 按 shape 分类的性能报告、实际设备和 CANN 版本记录。
 
-当前任务只落地本文和测试数据工具，不提前修改参赛 kernel 或原测试入口。
+当前仓库已在本文和测试数据工具的基础上落地 P1/P2：Host 驱动支持参数化 case，P2 kernel 按 `(batch,row)` 在多个 Vector Core 上计算完整 K 点积和 N 维 Max，再由独立 kernel 固定顺序执行 M 维 Sum。该路径用于建立真机正确性基线，不作为大尺寸性能实现。
 
 ### 1.1 开始编码前确认的环境信息
 
@@ -428,9 +428,9 @@ python preliminary/docs/test_data.py verify --case-dir preliminary/test_data/s01
 
 ## 10. 测试驱动改造和验证流程
 
-现有 main 固定形状、内存大小和属性，现有 run.sh 只拷贝 case0。不能只替换输入文件就声称测到了其他 shape。
+原始 main 固定形状、内存大小和属性，原始 run.sh 只拷贝 case0。当前 main 和 runner 已完成 P1 参数化改造；仍不能只替换输入文件就声称测到了其他 shape。
 
-P1 将本地驱动改成可接收 case 目录，或由 Python runner 解析 meta 后以明确 CLI 参数传入 B/M/N/K、dtype、TX1/TX2 和文件路径。CLI 名称届时定义；本文不虚构当前 executable 已支持这些参数。
+当前 P1 由 Python runner 解析 meta，并向可执行文件传入 `B M N K dtype TX1 TX2 case_dir repeats`。runner 负责逐 case 生成/复用数据、记录日志并调用严格 verifier。
 
 驱动需要：
 
@@ -507,7 +507,7 @@ final_score = mean(15 official case scores)
 
 ## 14. 本次文档交付的实际验证记录
 
-以下仅是配套 Python 工具的本地验证结果，不代表 NPU 算子已实现或通过测试：
+以下记录区分 CPU 工具验证、NPU 模式编译和真机验证；编译通过不代表算子已在真实设备上通过：
 
 - 环境：Python 3.13.10、NumPy 2.3.5、ml_dtypes 0.5.4。
 - 全部 808 个用例定义通过 shape 范围、输入容量约束和 ID 唯一性检查。
@@ -515,5 +515,7 @@ final_score = mean(15 official case scores)
 - 40 个 smoke 用例在临时目录完成实际二进制生成、按 dtype/shape 回读、golden 比较、文件长度和 SHA256 检查，正确输出全部被 verifier 接受。
 - 错误数值、空输出、过长输出、额外尾字节、NaN、Inf 六类错误输出均被拒绝；重复生成不会覆盖旧目录。
 - Markdown 本地链接与代码围栏已检查。
+- P2 正确性基线已使用 CANN 9.1、`dav-2201`、`CMAKE_ASC_RUN_MODE=npu` 成功编译。
+- P2 尚未在真实设备执行；FP16/BF16、四布局、重复运行和尾写行为需要在云端 smoke 集上验收。
 
-验证产生的临时数据已清理。交付的是可复现生成器和完整用例规格；大体积输入二进制按需生成，不在 docs 中存放数 GiB 测试文件。尚未进行 NPU 编译、设备正确性测试、stress golden 全量生成或性能测量。
+验证产生的临时数据已清理。交付的是可复现生成器和完整用例规格；大体积输入二进制按需生成，不在 docs 中存放数 GiB 测试文件。尚未进行设备正确性测试、stress golden 全量生成或性能测量。
