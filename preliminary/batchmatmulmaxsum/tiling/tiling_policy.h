@@ -61,7 +61,7 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
         const uint64_t tasks = static_cast<uint64_t>(shape.b) * mGroups;
         data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));
         data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(tasks, availableCoreNum));
-        const uint64_t rowMaxBytes = static_cast<uint64_t>(shape.b) * shape.m * sizeof(float);
+        const uint64_t rowMaxBytes = tasks * config->tileM * sizeof(float);
         const uint64_t stageOffset = AlignUpU64(rowMaxBytes, 512);
         const uint64_t stageBytes = static_cast<uint64_t>(data.launchBlocks) *
                                     config->tileM * config->tileN * sizeof(float);

@@ -52,7 +52,7 @@ def _materialize(
         split_m = min(max_m_groups, hardware.aic)
         task_count = problem.b * max_m_groups
         launch_blocks = min(task_count, hardware.aic)
-        row_max_bytes = problem.b * problem.m * 4
+        row_max_bytes = task_count * config.tile_m * 4
         stage_offset = ceil_div(row_max_bytes, 512) * 512
         stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
         atomic_bytes = ceil_div(problem.b, 8) * 8 * 4

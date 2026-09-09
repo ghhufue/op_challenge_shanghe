@@ -45,11 +45,13 @@ The BM path uses compile-time tile instances selected by tiling key. Key 100
 uses `16 x 128 x 64`, while key 101 uses `32 x 128 x 64`; both share the same
 Matmul, row-max and final atomic-reduction implementation. Each AIC computes one
 compact FP32 `tileM x tileN` result, and an AIV kernel folds it into the persistent
-`B x M` row maxima. Tiles are processed in core-sized waves, so the workspace is
-the aligned row-max buffer, one staging tile per active AIC, and a padded atomic
-output accumulator, rather than a full `B x M x N` matrix. Force keys 100 and 101
-locally to validate and benchmark them; the production policy intentionally
-remains on key 0 for now.
+task-major row maxima. Every BM task owns one padded `tileM` segment, which the
+AIV kernel maintains in UB and transfers between N tiles with aligned `DataCopy`
+operations. Tiles are processed in core-sized waves, so the workspace is the
+aligned task-padded row-max buffer, one staging tile per active AIC, and a padded
+atomic output accumulator, rather than a full `B x M x N` matrix. Force keys 100
+and 101 locally to validate and benchmark them; the production policy
+intentionally remains on key 0 for now.
 
 The production policy is kept in `tiling/generated_policy.inc`. It must select
 only implemented keys and always retain a legal general fallback. Derive its

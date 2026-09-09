@@ -36,25 +36,25 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(reference.workspace_bytes, 8 * 4)
         self.assertEqual(reference.launch_blocks, 34)
 
-    def test_bm_workspace_has_row_max_and_per_core_stage(self):
+    def test_bm_workspace_has_task_padded_row_max_and_per_core_stage(self):
         hardware = Hardware(aic=20, aiv=40)
         plans = enumerate_plans(
-            Problem(2, 17, 129, 64), hardware, implemented_only=True,
+            Problem(3, 33, 129, 64), hardware, implemented_only=True,
         )
         bm = next(plan for plan in plans if plan.config.key == 100)
-        self.assertEqual(bm.task_count, 4)
-        self.assertEqual(bm.launch_blocks, 4)
-        self.assertEqual(bm.workspace_bytes, 512 + 4 * 16 * 128 * 4 + 8 * 4)
+        self.assertEqual(bm.task_count, 9)
+        self.assertEqual(bm.launch_blocks, 9)
+        self.assertEqual(bm.workspace_bytes, 1024 + 9 * 16 * 128 * 4 + 8 * 4)
 
     def test_bm32_workspace_uses_its_compile_time_tile(self):
         hardware = Hardware(aic=20, aiv=40)
         plans = enumerate_plans(
-            Problem(2, 33, 129, 64), hardware, implemented_only=True,
+            Problem(3, 33, 129, 64), hardware, implemented_only=True,
         )
         bm = next(plan for plan in plans if plan.config.key == 101)
-        self.assertEqual(bm.task_count, 4)
-        self.assertEqual(bm.launch_blocks, 4)
-        self.assertEqual(bm.workspace_bytes, 512 + 4 * 32 * 128 * 4 + 8 * 4)
+        self.assertEqual(bm.task_count, 6)
+        self.assertEqual(bm.launch_blocks, 6)
+        self.assertEqual(bm.workspace_bytes, 1024 + 6 * 32 * 128 * 4 + 8 * 4)
 
     def test_n_split_does_not_create_empty_partition(self):
         plans = enumerate_plans(Problem(1, 1, 1, 32))
