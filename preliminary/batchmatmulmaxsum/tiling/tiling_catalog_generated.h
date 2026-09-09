@@ -34,8 +34,8 @@ constexpr StaticTilingConfig kTilingConfigs[] = {
     {TilingKey::VECTOR_REFERENCE, "vector_reference", KernelPath::REFERENCE, true, 1, 1, 1, 1, 1, 1},
     {TilingKey::BM_16X128X64, "bm_16x128x64", KernelPath::BM, true, 16, 128, 64, 16, 128, 1},
     {TilingKey::BM_32X128X64, "bm_32x128x64", KernelPath::BM, true, 32, 128, 64, 32, 128, 1},
-    {TilingKey::BM_32X256X64, "bm_32x256x64", KernelPath::BM, false, 32, 256, 64, 32, 128, 1},
-    {TilingKey::BM_64X128X128, "bm_64x128x128", KernelPath::BM, false, 64, 128, 128, 32, 128, 1},
+    {TilingKey::BM_32X256X64, "bm_32x256x64", KernelPath::BM, true, 32, 256, 64, 32, 128, 1},
+    {TilingKey::BM_64X128X128, "bm_64x128x128", KernelPath::BM, true, 64, 128, 128, 32, 128, 1},
     {TilingKey::BMN_16X256X64_P2, "bmn_16x256x64_p2", KernelPath::BMN, true, 16, 256, 64, 16, 128, 2},
     {TilingKey::BMN_16X256X64_P4, "bmn_16x256x64_p4", KernelPath::BMN, true, 16, 256, 64, 16, 128, 4},
 };

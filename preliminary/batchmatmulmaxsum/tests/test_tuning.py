@@ -19,12 +19,13 @@ class CatalogTests(unittest.TestCase):
     def test_catalog_has_reference_bm_and_bmn_paths(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0, 100, 101, 200, 201])
+        self.assertEqual(
+            [item.key for item in implemented],
+            [0, 100, 101, 102, 103, 200, 201],
+        )
         self.assertEqual(implemented[0].path, "reference")
-        self.assertEqual(implemented[1].path, "bm")
-        self.assertEqual(implemented[2].path, "bm")
-        self.assertEqual(implemented[3].path, "bmn")
-        self.assertEqual(implemented[4].path, "bmn")
+        self.assertTrue(all(item.path == "bm" for item in implemented[1:5]))
+        self.assertTrue(all(item.path == "bmn" for item in implemented[5:]))
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -57,6 +58,28 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(bm.task_count, 6)
         self.assertEqual(bm.launch_blocks, 6)
         self.assertEqual(bm.workspace_bytes, 1024 + 6 * 32 * 128 * 4 + 8 * 4)
+
+    def test_larger_bm_workspace_uses_each_compile_time_tile(self):
+        hardware = Hardware(aic=20, aiv=40)
+        plans = enumerate_plans(
+            Problem(3, 65, 257, 128), hardware, implemented_only=True,
+        )
+
+        bm_n256 = next(plan for plan in plans if plan.config.key == 102)
+        self.assertEqual(bm_n256.task_count, 9)
+        self.assertEqual(bm_n256.launch_blocks, 9)
+        self.assertEqual(
+            bm_n256.workspace_bytes,
+            1536 + 9 * 32 * 256 * 4 + 8 * 4,
+        )
+
+        bm_m64_k128 = next(plan for plan in plans if plan.config.key == 103)
+        self.assertEqual(bm_m64_k128.task_count, 6)
+        self.assertEqual(bm_m64_k128.launch_blocks, 6)
+        self.assertEqual(
+            bm_m64_k128.workspace_bytes,
+            1536 + 6 * 64 * 128 * 4 + 8 * 4,
+        )
 
     def test_bmn_workspace_has_partial_max_stage_and_atomic_output(self):
         hardware = Hardware(aic=20, aiv=40)
