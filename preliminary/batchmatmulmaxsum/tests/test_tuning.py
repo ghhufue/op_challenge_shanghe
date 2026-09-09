@@ -16,13 +16,15 @@ from tuning.model import Hardware, Problem  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):
-    def test_catalog_has_reference_and_bm_paths(self):
+    def test_catalog_has_reference_bm_and_bmn_paths(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0, 100, 101])
+        self.assertEqual([item.key for item in implemented], [0, 100, 101, 200, 201])
         self.assertEqual(implemented[0].path, "reference")
         self.assertEqual(implemented[1].path, "bm")
         self.assertEqual(implemented[2].path, "bm")
+        self.assertEqual(implemented[3].path, "bmn")
+        self.assertEqual(implemented[4].path, "bmn")
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -56,11 +58,44 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(bm.launch_blocks, 6)
         self.assertEqual(bm.workspace_bytes, 1024 + 6 * 32 * 128 * 4 + 8 * 4)
 
+    def test_bmn_workspace_has_partial_max_stage_and_atomic_output(self):
+        hardware = Hardware(aic=20, aiv=40)
+        plans = enumerate_plans(
+            Problem(1, 17, 1025, 64), hardware, implemented_only=True,
+        )
+        p2 = next(plan for plan in plans if plan.config.key == 200)
+        self.assertEqual(p2.split_n, 2)
+        self.assertEqual(p2.task_count, 4)
+        self.assertEqual(p2.launch_blocks, 4)
+        self.assertEqual(p2.workspace_bytes, 512 + 4 * 16 * 256 * 4 + 8 * 4)
+
+        p4 = next(plan for plan in plans if plan.config.key == 201)
+        self.assertEqual(p4.split_n, 4)
+        self.assertEqual(p4.task_count, 8)
+        self.assertEqual(p4.launch_blocks, 8)
+        self.assertEqual(p4.workspace_bytes, 512 + 8 * 16 * 256 * 4 + 8 * 4)
+
     def test_n_split_does_not_create_empty_partition(self):
         plans = enumerate_plans(Problem(1, 1, 1, 32))
         for plan in plans:
             self.assertLessEqual(plan.split_n, plan.config.split_n)
             self.assertEqual(plan.split_n, 1)
+
+    def test_bmn_round_robin_tile_assignment_is_complete_and_balanced(self):
+        for n_tiles in range(1, 20):
+            for configured_split in [2, 4]:
+                split_n = min(configured_split, n_tiles)
+                rounds = (n_tiles + split_n - 1) // split_n
+                groups = [
+                    [round_index * split_n + group
+                     for round_index in range(rounds)
+                     if round_index * split_n + group < n_tiles]
+                    for group in range(split_n)
+                ]
+                assigned = sorted(tile for group in groups for tile in group)
+                self.assertEqual(assigned, list(range(n_tiles)))
+                sizes = [len(group) for group in groups]
+                self.assertLessEqual(max(sizes) - min(sizes), 1)
 
     def test_capacity_filter_removes_optimized_tiles(self):
         tiny = Hardware(ub_bytes=1024, l1_bytes=1024, l0a_bytes=1024,

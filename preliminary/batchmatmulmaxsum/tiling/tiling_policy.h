@@ -67,8 +67,22 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
                                     config->tileM * config->tileN * sizeof(float);
         const uint64_t atomicBytes = AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
         data.workspaceBytes = stageOffset + stageBytes + atomicBytes;
+    } else if (config->path == KernelPath::BMN) {
+        const uint64_t mGroups = CeilDivU64(shape.m, config->tileM);
+        const uint64_t nTiles = CeilDivU64(shape.n, config->tileN);
+        data.splitN = static_cast<uint32_t>(
+            std::min<uint64_t>(config->splitN, nTiles));
+        const uint64_t tasks = static_cast<uint64_t>(shape.b) * mGroups * data.splitN;
+        data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));
+        data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(tasks, availableCoreNum));
+        const uint64_t partialMaxBytes = tasks * config->tileM * sizeof(float);
+        const uint64_t stageOffset = AlignUpU64(partialMaxBytes, 512);
+        const uint64_t stageBytes = static_cast<uint64_t>(data.launchBlocks) *
+                                    config->tileM * config->tileN * sizeof(float);
+        const uint64_t atomicBytes = AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
+        data.workspaceBytes = stageOffset + stageBytes + atomicBytes;
     } else {
-        throw std::invalid_argument("BMN plan construction is not implemented");
+        throw std::invalid_argument("Unknown kernel path");
     }
     return Plan{key, config->path, config->name, data};
 }

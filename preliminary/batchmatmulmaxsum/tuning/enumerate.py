@@ -64,18 +64,19 @@ def _materialize(
             workspace_bytes, memory, score,
         )
 
-    split_n = min(config.split_n, max(1, ceil_div(problem.n, config.tile_n)))
-    available_per_batch_n = max(1, hardware.aic // max(1, problem.b * split_n))
-    split_m = min(max_m_groups, available_per_batch_n)
-    task_count = problem.b * split_m * split_n
+    split_n = min(config.split_n, ceil_div(problem.n, config.tile_n))
+    split_m = min(max_m_groups, hardware.aic)
+    task_count = problem.b * max_m_groups * split_n
     launch_blocks = min(task_count, hardware.aic)
-    single_core_m = ceil_div(problem.m, split_m)
-    single_core_n = ceil_div(problem.n, split_n)
-    if split_n == 1:
-        workspace_bytes = problem.b * split_m * 4
-    else:
-        workspace_bytes = problem.b * split_m * split_n * single_core_m * 4
-        workspace_bytes += problem.b * split_m * 4
+    single_core_m = min(problem.m, config.tile_m)
+    single_core_n = min(
+        problem.n, ceil_div(ceil_div(problem.n, config.tile_n), split_n) * config.tile_n,
+    )
+    partial_max_bytes = task_count * config.tile_m * 4
+    stage_offset = ceil_div(partial_max_bytes, 512) * 512
+    stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
+    atomic_bytes = ceil_div(problem.b, 8) * 8 * 4
+    workspace_bytes = stage_offset + stage_bytes + atomic_bytes
     score = _estimate(problem, config, launch_blocks, hardware.aic)
     return CandidatePlan(
         config, split_m, split_n, task_count, launch_blocks,

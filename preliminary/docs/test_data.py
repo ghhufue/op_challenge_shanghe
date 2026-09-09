@@ -51,6 +51,8 @@ SUITES = {
         ("c22_large_k", (1, 17, 19, 8192), "uniform"),
         ("c23_large_k_tail", (1, 17, 19, 8184), "uniform"),
         ("c24_negative_multitile", (2, 17, 257, 40), "negative"),
+        ("c25_bmn_first_group", (2, 17, 513, 64), "first_n"),
+        ("c26_bmn_group_winners", (2, 17, 1025, 64), "n_group_winners"),
     ],
     "stress": [
         ("t00_square", (1, 2048, 2048, 128), "uniform"),
@@ -131,9 +133,12 @@ def logical_inputs(case):
             a[:, :, 0] = np.arange(1, b + 1)[:, None]
             d[:, :, 0] = np.arange(1, b + 1)[:, None] / 8
             expected = m * np.arange(1, b + 1, dtype=np.float64)**2 / 8
-        elif pattern in ["last_n", "tie", "near_tie"]:
+        elif pattern in ["first_n", "last_n", "tie", "near_tie"]:
             a[:, :, 0] = 1
-            if pattern == "last_n":
+            if pattern == "first_n":
+                d[:, :, 0], d[:, 0, 0] = -1, 2
+                expected = np.full(b, 2 * m)
+            elif pattern == "last_n":
                 d[:, :, 0], d[:, -1, 0] = -1, 2
                 expected = np.full(b, 2 * m)
             else:
@@ -141,6 +146,14 @@ def logical_inputs(case):
                 if pattern == "near_tie":
                     d[:, -1, 0] = 1 + 2**-7  # Distinct in both FP16 and BF16.
                 expected = np.full(b, m * (1 + (2**-7 if pattern == "near_tie" else 0)))
+        elif pattern == "n_group_winners":
+            d.fill(-1)
+            for row in range(m):
+                depth = row % k
+                anchor = min((row % 4) * 256, n - 1)
+                a[:, row, depth] = 1
+                d[:, anchor, depth] = 2
+            expected = np.full(b, 2 * m)
         elif pattern == "k_cancel":
             a.fill(1)
             d[:, 0, :k // 2], d[:, 0, k // 2:] = 1, -1

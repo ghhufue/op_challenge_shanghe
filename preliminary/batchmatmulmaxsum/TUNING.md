@@ -53,6 +53,15 @@ atomic output accumulator, rather than a full `B x M x N` matrix. Force keys 100
 and 101 locally to validate and benchmark them; the production policy
 intentionally remains on key 0 for now.
 
+The BMN path adds N-group parallelism for shapes where `B * ceil(M / tileM)`
+does not fill the AICs. Key 200 uses `16 x 256 x 64` with at most two N groups,
+and key 201 uses the same tile with at most four N groups. N tiles are assigned
+round-robin to groups. Each `(batch, M group, N group)` task maintains an aligned
+partial row-max tile in GM; after all groups finish, a separate AIV kernel takes
+the maximum across N groups, sums the valid M rows, and atomically accumulates
+the batch result. Keys 200 and 201 are available only through forced-key testing
+until measured device results justify a production-policy branch.
+
 The production policy is kept in `tiling/generated_policy.inc`. It must select
 only implemented keys and always retain a legal general fallback. Derive its
 branches from measured device results, then test both sides of every threshold.
