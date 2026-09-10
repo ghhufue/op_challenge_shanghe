@@ -63,7 +63,7 @@ the maximum across N groups, sums the valid M rows, and atomically accumulates
 the batch result. Keys 200 and 201 are available only through forced-key testing
 until measured device results justify a production-policy branch.
 
-The production policy is kept in `tiling/generated_policy.inc`. It must select
+The production policy is kept in `tiling/submission_policy.h`. It must select
 only implemented keys and always retain a legal general fallback. Derive its
 branches from measured device results, then test both sides of every threshold.
 
@@ -76,3 +76,8 @@ python -m tuning.fit_policy tuning_results/benchmark.json --max-depth 3
 
 Review the generated conditions before committing them. Exact case IDs and
 input values are never used as policy features.
+
+For competition submission, run `scripts/bundle_submission.ps1` and create only
+`kernel.asc` and `submission_policy.h` in the submission UI. Frequent policy
+changes require replacing only `submission_policy.h`; keep both files in the
+same virtual directory so the quoted include resolves.

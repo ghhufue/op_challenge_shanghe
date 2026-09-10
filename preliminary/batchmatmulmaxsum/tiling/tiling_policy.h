@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "tiling_catalog.h"
+#include "submission_policy.h"
 
 namespace bmms {
 
@@ -20,11 +21,18 @@ inline TilingKey SelectTilingKey(const Shape& shape, int64_t availableCoreNum,
     if (availableCoreNum < 1) {
         throw std::invalid_argument("No compute cores are available");
     }
-    (void)shape;
-    (void)inputDtype;
-    (void)transposeX1;
-    (void)transposeX2;
-#include "generated_policy.inc"
+    const TilingKey key = SelectSubmissionTilingKey(
+        shape, availableCoreNum, inputDtype, transposeX1, transposeX2);
+    const StaticTilingConfig* config = FindTilingConfig(key);
+    if (config == nullptr) {
+        throw std::invalid_argument("Submission policy selected an unknown tiling key");
+    }
+    if (!config->implemented) {
+        throw std::invalid_argument(
+            std::string("Submission policy selected an unimplemented tiling key: ") +
+            config->name);
+    }
+    return key;
 }
 
 inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key) {
