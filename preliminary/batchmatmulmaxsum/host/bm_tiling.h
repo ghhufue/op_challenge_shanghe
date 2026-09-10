@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <stdexcept>
-#include <vector>
 #include "lib/matmul/matmul_tiling.h"
 #include "tiling/platform/platform_ascendc.h"
 #include "tiling/tiling_types.h"
@@ -52,15 +51,46 @@ inline optiling::TCubeTiling MakeBmCubeTiling(
     return result;
 }
 
-inline DeviceAllocation UploadCubeTiling(optiling::TCubeTiling& tiling) {
+struct PersistentCubeTiling {
+    GM_ADDR deviceAddress;
+    void* hostAddress;
+    uint64_t bytes;
+};
+
+// Cached execution resources own both allocations for the process lifetime.
+// Pinned Host memory keeps the source valid until the stream reaches the
+// asynchronous H2D copy; the Device buffer then remains valid for every
+// cached Matmul launch.
+inline PersistentCubeTiling UploadPersistentCubeTiling(
+        optiling::TCubeTiling& tiling, aclrtStream stream) {
     const uint64_t bytes = static_cast<uint64_t>(tiling.GetDataSize());
-    std::vector<uint8_t> hostData(static_cast<size_t>(bytes));
-    tiling.SaveToBuffer(hostData.data(), hostData.size());
-    DeviceAllocation deviceData(bytes);
-    CheckAcl(aclrtMemcpy(deviceData.Address(), static_cast<size_t>(bytes),
-                         hostData.data(), hostData.size(), ACL_MEMCPY_HOST_TO_DEVICE),
-             "aclrtMemcpy(Matmul tiling H2D)");
-    return deviceData;
+    if (bytes == 0) {
+        throw std::runtime_error("Matmul tiling data must not be empty");
+    }
+
+    void* hostAddress = nullptr;
+    CheckAcl(aclrtMallocHost(&hostAddress, static_cast<size_t>(bytes)),
+             "aclrtMallocHost(persistent Matmul tiling)");
+    tiling.SaveToBuffer(static_cast<uint8_t*>(hostAddress), static_cast<size_t>(bytes));
+
+    void* deviceAddress = nullptr;
+    const aclError mallocStatus = aclrtMalloc(
+        &deviceAddress, static_cast<size_t>(bytes), ACL_MEM_MALLOC_HUGE_FIRST);
+    if (mallocStatus != ACL_SUCCESS) {
+        aclrtFreeHost(hostAddress);
+        CheckAcl(mallocStatus, "aclrtMalloc(persistent Matmul tiling)");
+    }
+
+    const aclError copyStatus = aclrtMemcpyAsync(
+        deviceAddress, static_cast<size_t>(bytes), hostAddress,
+        static_cast<size_t>(bytes), ACL_MEMCPY_HOST_TO_DEVICE, stream);
+    if (copyStatus != ACL_SUCCESS) {
+        aclrtFree(deviceAddress);
+        aclrtFreeHost(hostAddress);
+        CheckAcl(copyStatus, "aclrtMemcpyAsync(Matmul tiling H2D)");
+    }
+    return PersistentCubeTiling{
+        static_cast<uint8_t*>(deviceAddress), hostAddress, bytes};
 }
 
 }  // namespace bmms

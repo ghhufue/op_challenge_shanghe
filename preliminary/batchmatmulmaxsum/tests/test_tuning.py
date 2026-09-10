@@ -153,5 +153,41 @@ class PolicyTests(unittest.TestCase):
         self.assertIn("TilingKey::BM_16X128X64", policy)
 
 
+class SubmissionSourceTests(unittest.TestCase):
+    def test_dispatch_returns_without_internal_stream_synchronization(self):
+        dispatch = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
+            encoding="utf-8",
+        )
+        self.assertNotIn("aclrtSynchronizeStream(", dispatch)
+
+    def test_execution_resources_are_cached_per_stream_and_plan(self):
+        dispatch = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
+            encoding="utf-8",
+        )
+        for member in (
+            "aclrtStream stream;",
+            "TilingKey tilingKey;",
+            "Shape shape;",
+            "uint64_t workspaceBytes;",
+            "GM_ADDR cubeTiling;",
+            "void* cubeTilingHost;",
+        ):
+            self.assertIn(member, dispatch)
+
+    def test_cube_tiling_upload_is_stream_ordered_and_asynchronous(self):
+        tiling = (OP_ROOT / "host" / "bm_tiling.h").read_text(encoding="utf-8")
+        self.assertIn("aclrtMallocHost", tiling)
+        self.assertIn("aclrtMemcpyAsync", tiling)
+        self.assertNotIn("aclrtMemcpy(", tiling)
+
+    def test_submission_policy_uses_optimized_paths(self):
+        policy = (OP_ROOT / "tiling" / "submission_policy.h").read_text(
+            encoding="utf-8",
+        )
+        self.assertIn("TilingKey::BM_", policy)
+        self.assertIn("TilingKey::BMN_", policy)
+        self.assertNotIn("return TilingKey::VECTOR_REFERENCE;", policy)
+
+
 if __name__ == "__main__":
     unittest.main()
