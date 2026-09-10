@@ -41,27 +41,28 @@ Candidates with `implemented: false` can be inspected by the planner but are
 rejected by both the tuning runner and the C++ dispatcher. Change the flag only
 after the corresponding kernel path exists and passes forced-path tests.
 
-The BM path uses compile-time tile instances selected by tiling key. Keys
-100 through 103 use `16 x 128 x 64`, `32 x 128 x 64`, `32 x 256 x 64`, and
-`64 x 128 x 128`, respectively; all share the same Matmul, row-max and final
-atomic-reduction implementation. Each AIC computes one
-compact FP32 `tileM x tileN` result, and an AIV kernel folds it into the persistent
-task-major row maxima. Every BM task owns one padded `tileM` segment, which the
-AIV kernel maintains in UB and transfers between N tiles with aligned `DataCopy`
-operations. Tiles are processed in core-sized waves, so the workspace is the
-aligned task-padded row-max buffer, one staging tile per active AIC, and a padded
-atomic output accumulator, rather than a full `B x M x N` matrix. Force keys
-100 through 103 locally to validate and benchmark them; the production policy
-intentionally remains on key 0 for now.
+The optimized paths use one `KERNEL_TYPE_MIX_AIC_1_2` launch. Work is divided
+over `(batch, M group, N group)`, with enough round-robin N groups to fill the
+available Cube cores. Each logical AIC streams its assigned N tiles through two
+compact FP32 GM staging buffers. Its paired AIV sub-blocks consume half of the M
+rows each and use `WholeReduceMax` to maintain online row maxima in UB. The AIV
+workers first merge N-group partial maxima, then publish one padded batch-sum
+vector per worker for the final reduction to `y`. Cross-core flag 5 announces a
+completed Matmul tile; flags 6 and 7 return the two ping-pong buffers only after
+the AIV online reduction has consumed them. There are no host
+stream synchronizations, auxiliary compute launches, or per-call workspace
+frees in this path. Matmul tiling is uploaded synchronously to persistent GM
+once per cached stream/shape plan, so it does not add a task to the execution
+stream; subsequent calls reuse the same tiling buffer.
 
-The BMN path adds N-group parallelism for shapes where `B * ceil(M / tileM)`
-does not fill the AICs. Key 200 uses `16 x 256 x 64` with at most two N groups,
-and key 201 uses the same tile with at most four N groups. N tiles are assigned
-round-robin to groups. Each `(batch, M group, N group)` task maintains an aligned
-partial row-max tile in GM; after all groups finish, a separate AIV kernel takes
-the maximum across N groups, sums the valid M rows, and atomically accumulates
-the batch result. Keys 200 and 201 are available only through forced-key testing
-until measured device results justify a production-policy branch.
+Keys 100 through 103 retain the `16 x 128 x 64`, `32 x 128 x 64`,
+`32 x 256 x 64`, and `64 x 128 x 128` tile choices. Keys 200 and 201 both use
+`16 x 256 x 64`; their old fixed N-split values are retained only as policy
+identities because the MIX planner now chooses the useful N-group count from
+the shape and available Cube cores.
+The checked-in production policy preserves the previously measured key choices,
+but changing from multiple launches to one fused launch changes their relative
+costs, so benchmark all keys again before treating that policy as newly tuned.
 
 The production policy is kept in `tiling/submission_policy.h`. It must select
 only implemented keys and always retain a legal general fallback. Derive its

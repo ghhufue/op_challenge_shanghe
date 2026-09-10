@@ -170,15 +170,125 @@ class SubmissionSourceTests(unittest.TestCase):
             "Shape shape;",
             "uint64_t workspaceBytes;",
             "GM_ADDR cubeTiling;",
-            "void* cubeTilingHost;",
         ):
             self.assertIn(member, dispatch)
+        self.assertNotIn("aclrtGetDevice(", dispatch)
 
-    def test_cube_tiling_upload_is_stream_ordered_and_asynchronous(self):
+    def test_cube_tiling_is_cached_in_gm_with_one_synchronous_upload(self):
         tiling = (OP_ROOT / "host" / "bm_tiling.h").read_text(encoding="utf-8")
-        self.assertIn("aclrtMallocHost", tiling)
-        self.assertIn("aclrtMemcpyAsync", tiling)
-        self.assertNotIn("aclrtMemcpy(", tiling)
+        mixed = (OP_ROOT / "kernels" / "mixed.asc").read_text(encoding="utf-8")
+        self.assertNotIn("aclrtMallocHost", tiling)
+        self.assertNotIn("aclrtMemcpyAsync", tiling)
+        self.assertIn("aclrtMemcpy(", tiling)
+        self.assertIn("GM_ADDR cubeTilingAddress", mixed)
+        self.assertIn("LoadMixedCubeTiling(cubeTilingAddress, cubeTiling);", mixed)
+        self.assertIn("KERNEL_TYPE_MIX_AIC_1_2", mixed)
+
+    def test_optimized_dispatch_uses_one_mixed_kernel_launch(self):
+        mixed = (OP_ROOT / "kernels" / "mixed.asc").read_text(encoding="utf-8")
+        dispatch = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
+            encoding="utf-8",
+        )
+        self.assertEqual(mixed.count("<<<"), 1)
+        self.assertNotIn("<<<", dispatch)
+        self.assertIn("LaunchBatchMatmulMaxSumMixedByTranspose", dispatch)
+        self.assertNotIn("LaunchBmMatmul", dispatch)
+        self.assertNotIn("UpdateBmRowMax", dispatch)
+        self.assertNotIn("ReduceBmnPartialMax", dispatch)
+
+    def test_mixed_kernel_matches_official_cross_core_protocol(self):
+        mixed = (OP_ROOT / "kernels" / "mixed.asc").read_text(encoding="utf-8")
+        self.assertIn("constexpr uint64_t kMixedReadyFlag = 5;", mixed)
+        self.assertIn("constexpr uint64_t kMixedReusableFlagBase = 6;", mixed)
+        self.assertIn("CrossCoreWaitFlag(kMixedReadyFlag);", mixed)
+        self.assertIn(
+            "CrossCoreSetFlag<kMixedSyncMode, PIPE_FIX>(kMixedReadyFlag);",
+            mixed,
+        )
+        self.assertIn("SyncAll<false>();", mixed)
+        self.assertIn(
+            "matmul.template IterateAll<false>(stage[stageOffset], 0, true);",
+            mixed,
+        )
+        self.assertIn("(segment * RowsPerLane + row) * 2", mixed)
+        self.assertLess(
+            mixed.index("rowMax.SetValue(row, best);"),
+            mixed.index("CrossCoreSetFlag<kMixedSyncMode, PIPE_S>"),
+        )
+
+    def test_optimized_plan_uses_physical_cube_core_count(self):
+        entry = (OP_ROOT / "kernel.asc").read_text(encoding="utf-8")
+        self.assertIn("bmms::QueryCubeCoreCount()", entry)
+        self.assertIn("bmms::MakePlan(shape, computeCoreNum, key)", entry)
+
+    def test_mixed_scheduler_covers_tail_rows_without_overlap_or_deadlock(self):
+        cases = (
+            (1, 1, 3, 16, 128, 20),
+            (3, 33, 257, 16, 256, 20),
+            (64, 129, 8192, 64, 128, 20),
+        )
+        for batches, rows, columns, tile_m, tile_n, available_cores in cases:
+            m_groups = (rows + tile_m - 1) // tile_m
+            n_tiles = (columns + tile_n - 1) // tile_n
+            bm_task_count = batches * m_groups
+            n_groups = min(
+                n_tiles,
+                max(1, (available_cores + bm_task_count - 1) // bm_task_count),
+            )
+            task_count = bm_task_count * n_groups
+            cube_blocks = min(task_count, available_cores)
+            covered_values = set()
+            for logical_core in range(cube_blocks):
+                iterations = 0
+                for task in range(logical_core, task_count, cube_blocks):
+                    bm_task, n_group = divmod(task, n_groups)
+                    batch, m_group = divmod(bm_task, m_groups)
+                    row_base = m_group * tile_m
+                    actual_m = min(tile_m, rows - row_base)
+                    rows_per_lane = tile_m // 2
+                    for n_tile in range(n_group, n_tiles, n_groups):
+                        for lane in range(2):
+                            lane_begin = lane * rows_per_lane
+                            lane_end = min(actual_m, lane_begin + rows_per_lane)
+                            for row in range(lane_begin, lane_end):
+                                value = (batch, row_base + row, n_tile)
+                                self.assertNotIn(value, covered_values)
+                                covered_values.add(value)
+                        iterations += 1
+
+                for ping_pong in range(2):
+                    waits = sum(
+                        sequence >= 2 and sequence % 2 == ping_pong
+                        for sequence in range(iterations)
+                    )
+                    releases = sum(
+                        sequence + 2 < iterations and sequence % 2 == ping_pong
+                        for sequence in range(iterations)
+                    )
+                    self.assertEqual(waits, releases)
+
+            self.assertEqual(covered_values, {
+                (batch, row, n_tile)
+                for batch in range(batches)
+                for row in range(rows)
+                for n_tile in range(n_tiles)
+            })
+
+            vector_blocks = cube_blocks * 2
+            reduced_rows = set()
+            for worker in range(vector_blocks):
+                for lane_task in range(worker, bm_task_count * 2, vector_blocks):
+                    bm_task, lane = divmod(lane_task, 2)
+                    batch, m_group = divmod(bm_task, m_groups)
+                    row_base = m_group * tile_m
+                    actual_m = min(tile_m, rows - row_base)
+                    lane_begin = lane * (tile_m // 2)
+                    lane_end = min(actual_m, lane_begin + tile_m // 2)
+                    for row in range(lane_begin, lane_end):
+                        reduced_rows.add((batch, row_base + row))
+            self.assertEqual(reduced_rows, {
+                (batch, row) for batch in range(batches) for row in range(rows)
+            })
 
     def test_submission_policy_uses_optimized_paths(self):
         policy = (OP_ROOT / "tiling" / "submission_policy.h").read_text(

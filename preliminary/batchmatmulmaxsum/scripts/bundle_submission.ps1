@@ -14,8 +14,7 @@ $fragments = @(
     "host/input_validation.h",
     "host/bm_tiling.h",
     "kernels/reference.asc",
-    "kernels/bm.asc",
-    "kernels/bmn.asc",
+    "kernels/mixed.asc",
     "kernels/kernel_dispatch.asc",
     "kernel.asc"
 )
@@ -68,7 +67,7 @@ foreach ($relativePath in $fragments) {
             $body.Add('#include "submission_policy.h"')
             continue
         }
-        if ($relativePath -eq "kernels/bm.asc" -and
+        if ($relativePath -eq "kernels/mixed.asc" -and
             $line -match '^\s*#include\s+"lib/matmul_intf\.h"\s*$') {
             $body.Add('#include "lib/matmul_intf.h"')
             continue
