@@ -9,12 +9,13 @@ $fragments = @(
     "tiling/tiling_catalog_generated.h",
     "tiling/tiling_types.h",
     "tiling/tiling_catalog.h",
-    "tiling/tiling_policy.h",
     "host/acl_runtime.h",
     "host/input_validation.h",
-    "host/bm_tiling.h",
+    "host/fused_tiling.h",
+    "tiling/tiling_policy.h",
     "kernels/reference.asc",
-    "kernels/mixed.asc",
+    "kernels/auto_matmul_fused.asc",
+    "kernels/final_reduce.asc",
     "kernels/kernel_dispatch.asc",
     "kernel.asc"
 )
@@ -31,7 +32,7 @@ $preamble = @'
 #include <vector>
 #include "acl/acl.h"
 #include "kernel_operator.h"
-#include "lib/matmul/matmul_tiling.h"
+#include "tiling/tiling_api.h"
 #include "tiling/platform/platform_ascendc.h"
 '@
 
@@ -67,7 +68,7 @@ foreach ($relativePath in $fragments) {
             $body.Add('#include "submission_policy.h"')
             continue
         }
-        if ($relativePath -eq "kernels/mixed.asc" -and
+        if ($relativePath -eq "kernels/auto_matmul_fused.asc" -and
             $line -match '^\s*#include\s+"lib/matmul_intf\.h"\s*$') {
             $body.Add('#include "lib/matmul_intf.h"')
             continue

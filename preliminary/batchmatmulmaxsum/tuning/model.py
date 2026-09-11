@@ -45,6 +45,7 @@ class Hardware:
     l0a_bytes: int = 64 * 1024
     l0b_bytes: int = 64 * 1024
     l0c_bytes: int = 128 * 1024
+    system_workspace_bytes: int = 0
 
     def validate(self) -> None:
         if self.aic <= 0 or self.aiv <= 0:
@@ -58,6 +59,8 @@ class Hardware:
         ):
             if value <= 0:
                 raise ValueError("memory capacities must be positive")
+        if self.system_workspace_bytes < 0:
+            raise ValueError("system workspace size must not be negative")
 
 
 @dataclass(frozen=True)
@@ -67,8 +70,8 @@ class BufferPolicy:
     l0a_buffers: int = 2
     l0b_buffers: int = 2
     l0c_buffers: int = 1
-    ub_input_buffers: int = 2
-    ub_row_buffers: int = 2
+    ub_input_buffers: int = 1
+    ub_row_buffers: int = 1
     ub_reserve_bytes: int = 0
     l1_reserve_bytes: int = 0
     l0a_reserve_bytes: int = 0

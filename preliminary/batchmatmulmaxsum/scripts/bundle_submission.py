@@ -12,12 +12,13 @@ FRAGMENTS = (
     "tiling/tiling_catalog_generated.h",
     "tiling/tiling_types.h",
     "tiling/tiling_catalog.h",
-    "tiling/tiling_policy.h",
     "host/acl_runtime.h",
     "host/input_validation.h",
-    "host/bm_tiling.h",
+    "host/fused_tiling.h",
+    "tiling/tiling_policy.h",
     "kernels/reference.asc",
-    "kernels/mixed.asc",
+    "kernels/auto_matmul_fused.asc",
+    "kernels/final_reduce.asc",
     "kernels/kernel_dispatch.asc",
     "kernel.asc",
 )
@@ -33,7 +34,7 @@ PREAMBLE = '''// Self-contained competition submission bundle.
 #include <vector>
 #include "acl/acl.h"
 #include "kernel_operator.h"
-#include "lib/matmul/matmul_tiling.h"
+#include "tiling/tiling_api.h"
 #include "tiling/platform/platform_ascendc.h"'''  # noqa: E501
 
 INCLUDE_RE = re.compile(r'^\s*#include\s+[<"].*[>"]\s*$')
@@ -63,7 +64,7 @@ def bundle(project_root: Path, output_path: Path) -> None:
                     re.match(r'^\s*#include\s+"submission_policy\.h"\s*$', line)):
                 body.append('#include "submission_policy.h"')
                 continue
-            if (relative_path == "kernels/mixed.asc" and
+            if (relative_path == "kernels/auto_matmul_fused.asc" and
                     re.match(r'^\s*#include\s+"lib/matmul_intf\.h"\s*$', line)):
                 body.append('#include "lib/matmul_intf.h"')
                 continue

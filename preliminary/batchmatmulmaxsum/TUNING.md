@@ -1,84 +1,89 @@
-# Tiling development workflow
+# BatchMatmulMaxSum tuning workflow
 
-The runtime and offline tuner share `configs/tiling_candidates.json` as the
-single source of candidate identities and static tile parameters. Run:
+The production catalog deliberately starts with two stable candidates:
+
+- key `0`, `VECTOR_REFERENCE`: correctness and tiny-shape fallback;
+- key `100`, `AUTO_MATMUL_FUSED`: the fixed high-level Matmul API baseline.
+
+Key 100 uses `matmul::Matmul` with C in `VECIN`. It does not use a user-written
+cross-core flag protocol or a GM C-tile staging buffer. Keep key 100 stable so
+future automatic-API tilings and manual-flag implementations have a reproducible
+baseline.
+
+For key 100, `tile_m=64` is the two-lane shard size, `vec_m=32` is the row count
+owned by each AIV, and `tile_n=128` is the maximum VECIN tile capacity. The Host
+tiler chooses `baseN=min(128, align_up(N, 16))` so small-N shapes remain legal;
+the `TCubeTiling` returned by CANN is authoritative for the actual base sizes.
+
+## Catalog
+
+`configs/tiling_candidates.json` remains the source of candidate identities.
+After changing it, run:
 
 ```bash
 python scripts/generate_tiling_catalog.py
 python scripts/generate_tiling_catalog.py --check
 ```
 
-after editing the catalog. Commit the generated
-`tiling/tiling_catalog_generated.h` together with the JSON source.
+The `split_n` field is reserved for future experiments. Current implemented
+candidates must use `split_n=1`; adding N splitting requires a kernel that
+stores and correctly merges per-row partial maxima.
 
-## Inspect candidates without an NPU
+Suggested key ranges:
+
+```text
+100        fixed automatic-fusion baseline
+110-119    automatic API baseM/baseN/baseK variants
+120-129    automatic API scheduling or async variants
+200-299    manual flag-controlled fusion variants
+```
+
+## Inspect and benchmark
+
+Inspect legal candidates without an NPU:
 
 ```bash
 python -m tuning.cli --B 1 --M 4096 --N 8192 --K 1024
-python -m tuning.cli --B 1 --M 4096 --N 8192 --K 1024 --json
 ```
 
-Capacity checks reject impossible tiles. `estimated_score` is only a cheap
-ordering hint and must not be reported as measured performance.
-The default offline hardware profile is the 20-AIC/40-AIV competition target;
-pass explicit `Hardware` values when exploring another device.
-
-## Benchmark implemented candidates
-
-The local CMake target defines `BMMS_ENABLE_TUNING`. It accepts an optional
-final positional `tiling_key`, while the competition `run_kernel` ABI remains
-unchanged. Benchmark all implemented keys with:
+Benchmark every implemented key on the target device:
 
 ```bash
 python scripts/tune_cases.py \
   --exe build/batch_matmul_max_sum_custom \
   --cann-root /path/to/cann \
-  --suite smoke \
+  --suite correctness \
+  --warmups 10 \
   --repeats 100
 ```
 
-Candidates with `implemented: false` can be inspected by the planner but are
-rejected by both the tuning runner and the C++ dispatcher. Change the flag only
-after the corresponding kernel path exists and passes forced-path tests.
+Every new key must pass smoke, correctness, fuzz, repeated-run and transpose
+coverage under forced-key execution before it is eligible for policy fitting.
+Do not overwrite key 100 with an experiment.
 
-The optimized paths use one `KERNEL_TYPE_MIX_AIC_1_2` launch. Work is divided
-over `(batch, M group, N group)`, with enough round-robin N groups to fill the
-available Cube cores. Each logical AIC streams its assigned N tiles through two
-compact FP32 GM staging buffers. Its paired AIV sub-blocks consume half of the M
-rows each and use `WholeReduceMax` to maintain online row maxima in UB. The AIV
-workers first merge N-group partial maxima, then publish one padded batch-sum
-vector per worker for the final reduction to `y`. Cross-core flag 5 announces a
-completed Matmul tile; flags 6 and 7 return the two ping-pong buffers only after
-the AIV online reduction has consumed them. There are no host
-stream synchronizations, auxiliary compute launches, or per-call workspace
-frees in this path. Matmul tiling is uploaded synchronously to persistent GM
-once per cached stream/shape plan, so it does not add a task to the execution
-stream; subsequent calls reuse the same tiling buffer.
-
-Keys 100 through 103 retain the `16 x 128 x 64`, `32 x 128 x 64`,
-`32 x 256 x 64`, and `64 x 128 x 128` tile choices. Keys 200 and 201 both use
-`16 x 256 x 64`; their old fixed N-split values are retained only as policy
-identities because the MIX planner now chooses the useful N-group count from
-the shape and available Cube cores.
-The checked-in production policy preserves the previously measured key choices,
-but changing from multiple launches to one fused launch changes their relative
-costs, so benchmark all keys again before treating that policy as newly tuned.
-
-The production policy is kept in `tiling/submission_policy.h`. It must select
-only implemented keys and always retain a legal general fallback. Derive its
-branches from measured device results, then test both sides of every threshold.
-
-Once at least two implemented keys have complete measurements, a shallow
-regret-minimizing tree can be generated with:
+Once complete measurements exist for at least two candidates, generate a
+policy with:
 
 ```bash
 python -m tuning.fit_policy tuning_results/benchmark.json --max-depth 3
 ```
 
-Review the generated conditions before committing them. Exact case IDs and
-input values are never used as policy features.
+The generated policy may use only shape, dtype and transpose metadata. Review
+the thresholds before committing it.
 
-For competition submission, run `scripts/bundle_submission.ps1` and create only
-`kernel.asc` and `submission_policy.h` in the submission UI. Frequent policy
-changes require replacing only `submission_policy.h`; keep both files in the
-same virtual directory so the quoted include resolves.
+## Submission bundle
+
+Generate the self-contained source and policy header with either:
+
+```bash
+python scripts/bundle_submission.py
+```
+
+or:
+
+```powershell
+./scripts/bundle_submission.ps1
+```
+
+Always compile the regenerated bundle before submission. Build artifacts,
+test data and large benchmark result files remain local and are ignored by Git.

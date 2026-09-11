@@ -21,6 +21,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--transpose-x2", action="store_true")
     result.add_argument("--aic", type=int, default=24)
     result.add_argument("--aiv", type=int, default=48)
+    result.add_argument("--system-workspace-bytes", type=int, default=0)
     result.add_argument("--implemented-only", action="store_true")
     result.add_argument("--json", action="store_true")
     return result
@@ -34,7 +35,8 @@ def main() -> int:
     )
     plans = enumerate_plans(
         problem,
-        Hardware(aic=args.aic, aiv=args.aiv),
+        Hardware(aic=args.aic, aiv=args.aiv,
+                 system_workspace_bytes=args.system_workspace_bytes),
         implemented_only=args.implemented_only,
     )
     if args.json:

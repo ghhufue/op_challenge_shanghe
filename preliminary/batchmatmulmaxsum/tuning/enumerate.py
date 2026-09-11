@@ -23,8 +23,9 @@ def _estimate(
     macs = config.tile_m * config.tile_n * config.tile_k
     traffic = 2 * config.tile_k * (config.tile_m + config.tile_n)
     parallelism = launch_blocks / available_aic
-    n_penalty = 1.0 / config.split_n
-    return macs / max(traffic, 1) * math.sqrt(useful_m * useful_n * useful_k) * parallelism * n_penalty
+    return macs / max(traffic, 1) * math.sqrt(
+        useful_m * useful_n * useful_k,
+    ) * parallelism
 
 
 def _materialize(
@@ -48,35 +49,15 @@ def _materialize(
         )
 
     max_m_groups = ceil_div(problem.m, config.tile_m)
-    if config.path == "bm":
-        split_m = min(max_m_groups, hardware.aic)
-        task_count = problem.b * max_m_groups
-        launch_blocks = min(task_count, hardware.aic)
-        row_max_bytes = task_count * config.tile_m * 4
-        stage_offset = ceil_div(row_max_bytes, 512) * 512
-        stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
-        atomic_bytes = ceil_div(problem.b, 8) * 8 * 4
-        workspace_bytes = stage_offset + stage_bytes + atomic_bytes
-        score = _estimate(problem, config, launch_blocks, hardware.aic)
-        return CandidatePlan(
-            config, split_m, 1, task_count, launch_blocks,
-            min(problem.m, config.tile_m), min(problem.n, config.tile_n),
-            workspace_bytes, memory, score,
-        )
-
-    split_n = min(config.split_n, ceil_div(problem.n, config.tile_n))
+    split_n = config.split_n
     split_m = min(max_m_groups, hardware.aic)
-    task_count = problem.b * max_m_groups * split_n
+    task_count = problem.b * max_m_groups
     launch_blocks = min(task_count, hardware.aic)
-    single_core_m = min(problem.m, config.tile_m)
-    single_core_n = min(
-        problem.n, ceil_div(ceil_div(problem.n, config.tile_n), split_n) * config.tile_n,
-    )
-    partial_max_bytes = task_count * config.tile_m * 4
-    stage_offset = ceil_div(partial_max_bytes, 512) * 512
-    stage_bytes = launch_blocks * config.tile_m * config.tile_n * 4
-    atomic_bytes = ceil_div(problem.b, 8) * 8 * 4
-    workspace_bytes = stage_offset + stage_bytes + atomic_bytes
+    single_core_m = min(problem.m, config.vec_m)
+    single_core_n = problem.n
+    partial_offset = ceil_div(hardware.system_workspace_bytes, 512) * 512
+    partial_bytes = task_count * 2 * 4
+    workspace_bytes = ceil_div(partial_offset + partial_bytes, 512) * 512
     score = _estimate(problem, config, launch_blocks, hardware.aic)
     return CandidatePlan(
         config, split_m, split_n, task_count, launch_blocks,
