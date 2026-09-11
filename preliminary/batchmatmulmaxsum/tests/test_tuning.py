@@ -210,10 +210,10 @@ class SubmissionSourceTests(unittest.TestCase):
             "matmul.template IterateAll<false>(stage[stageOffset], 0, true);",
             mixed,
         )
-        self.assertIn("(segment * RowsPerLane + row) * 2", mixed)
+        self.assertIn("segment * RowsPerLane * 2 + row", mixed)
         self.assertLess(
             mixed.index("rowMax.SetValue(row, best);"),
-            mixed.index("CrossCoreSetFlag<kMixedSyncMode, PIPE_S>"),
+            mixed.index("CrossCoreSetFlag<kMixedSyncMode, PIPE_MTE3>"),
         )
 
     def test_optimized_plan_uses_physical_cube_core_count(self):
