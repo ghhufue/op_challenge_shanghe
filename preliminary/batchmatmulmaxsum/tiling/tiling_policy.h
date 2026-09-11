@@ -60,7 +60,7 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
     data.vecN = config->vecN;
     data.splitN = config->splitN;
     data.systemWorkspaceBytes = 0;
-    data.partialScoreOffsetBytes = 0;
+    data.atomicOutputOffsetBytes = 0;
 
     if (config->path == KernelPath::REFERENCE) {
         const uint64_t taskCount = static_cast<uint64_t>(shape.b) * shape.m;
@@ -73,10 +73,11 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
         data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));
         data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(tasks, availableCoreNum));
         data.systemWorkspaceBytes = QueryMatmulSystemWorkspaceBytes();
-        data.partialScoreOffsetBytes = AlignUpU64(data.systemWorkspaceBytes, 512);
-        const uint64_t partialBytes = tasks * kAivPerAic * sizeof(float);
+        data.atomicOutputOffsetBytes = AlignUpU64(data.systemWorkspaceBytes, 512);
+        const uint64_t atomicOutputBytes =
+            AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
         data.workspaceBytes = AlignUpU64(
-            data.partialScoreOffsetBytes + partialBytes, 512);
+            data.atomicOutputOffsetBytes + atomicOutputBytes, 512);
     } else {
         throw std::invalid_argument("Unknown kernel path");
     }

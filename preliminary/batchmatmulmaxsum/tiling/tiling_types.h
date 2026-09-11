@@ -32,7 +32,7 @@ struct TilingData {
     uint32_t splitN;
     uint32_t launchBlocks;
     uint64_t systemWorkspaceBytes;
-    uint64_t partialScoreOffsetBytes;
+    uint64_t atomicOutputOffsetBytes;
     uint64_t workspaceBytes;
 };
 

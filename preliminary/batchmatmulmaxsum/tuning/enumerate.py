@@ -55,9 +55,13 @@ def _materialize(
     launch_blocks = min(task_count, hardware.aic)
     single_core_m = min(problem.m, config.vec_m)
     single_core_n = problem.n
-    partial_offset = ceil_div(hardware.system_workspace_bytes, 512) * 512
-    partial_bytes = task_count * 2 * 4
-    workspace_bytes = ceil_div(partial_offset + partial_bytes, 512) * 512
+    atomic_output_offset = ceil_div(
+        hardware.system_workspace_bytes, 512,
+    ) * 512
+    atomic_output_bytes = ceil_div(problem.b, 8) * 8 * 4
+    workspace_bytes = ceil_div(
+        atomic_output_offset + atomic_output_bytes, 512,
+    ) * 512
     score = _estimate(problem, config, launch_blocks, hardware.aic)
     return CandidatePlan(
         config, split_m, split_n, task_count, launch_blocks,

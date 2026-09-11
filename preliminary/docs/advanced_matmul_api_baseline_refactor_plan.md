@@ -29,7 +29,7 @@
 - 新增一个使用官方高阶 Matmul API 的 MIX kernel。
 - Matmul 输出直接由 `GetTensorC` 获取到 `VECIN`，不经过自建 GM tile staging。
 - 在 AIV 上对每个 C tile 做 FP32 行最大值，并跨 N tile 在线更新。
-- 将每个 M shard 的部分分数写入 workspace，再用一个很小的 Vector kernel 汇总为 `[B]`。
+- 每个 AIV 在 UB 中按 batch 累加自己处理的 M shard，结束前以一次对齐的 FP32 AtomicAdd 写入 workspace 输出区。
 - 支持 FP16、BF16 和四种 transpose storage 组合。
 - 保留 `run_kernel_forced(..., tilingKey)`，使每个候选可以独立做正确性和性能测试。
 - 保留数据生成、golden、校验、批量 case、重复计时、结果分析和提交打包能力。
@@ -41,7 +41,7 @@
 - 不手写 `CrossCoreSetFlag/CrossCoreWaitFlag`。
 - 不实现 N 方向多核分片；候选元数据保留 `splitN=1`，生产 kernel 不包含兼容分支。
 - 不同时调试多个 tile 候选；第一版只使用一个保守、合法的自动融合配置。
-- 不在第一版融合最终跨 shard 的 Sum；先使用第二个轻量 Vector kernel，保证实现简单、同步关系明确。
+- 不启动第二个归约 kernel；评测要求每次调用恰好启动一个 device kernel。
 - 不以本次重构的性能作为最终结论；它只是后续优化的可重复基线。
 
 ## 3. 官方接口依据
@@ -74,16 +74,16 @@ run_kernel
   │    ├─ VECTOR_REFERENCE        极小 shape
   │    └─ AUTO_MATMUL_FUSED       其余 shape
   ├─ 创建或复用 tiling + workspace
+  ├─ aclrtMemsetAsync：清零对齐的 atomic output
   ├─ 启动 AUTO_MATMUL_FUSED MIX kernel
   │    ├─ Matmul API：完整 K 累加
   │    ├─ GetTensorC：C tile -> VECIN
   │    ├─ AIV：沿 N 在线 ReduceMax
-  │    └─ AIV：写 partialScore[b, mShard]
-  └─ 启动 FinalReduce Vector kernel
-       └─ y[b] = sum(partialScore[b, :])
+  │    └─ AIV：UB 内按 batch 累积，最终 AtomicAdd -> atomicOutput
+  └─ aclrtMemcpyAsync：atomicOutput[0:B] -> y
 ```
 
-主融合 kernel 只负责 `Matmul + Max(N) + shard 内 Sum(M)`。最终 Vector kernel 只读取很小的 `partialScore`，不读取完整 C，也不重复矩阵计算。
+唯一的 device kernel 完成 `Matmul + Max(N) + shard 内 Sum(M) + AtomicAdd`。调用前后的异步清零和 D2D 拷贝是 stream 上的内存操作，不产生额外 kernel launch。
 
 ## 5. 工作划分原则
 
@@ -174,7 +174,9 @@ for each C tile returned by GetTensorC:
     tileMax = ReduceMax(C tile, axis=N)
     rowMax = Maximum(rowMax, tileMax)
 
-partialScore[task] = Sum(rowMax[validRows])
+localSums[batch] += Sum(rowMax[validRows])
+
+循环结束后：atomicOutput[:] += localSums[:]
 ```
 
 必须满足：
@@ -195,7 +197,7 @@ partialScore[task] = Sum(rowMax[validRows])
 - `SetDim` 与 `SetSimdNumBlocks` 对任务切分的实际结果；
 - 是否能通过 tiling 保证同一行的完整 N 由同一 AIV 在线归约。
 
-探针确认 CANN 9.1 / `dav-2201` 上 AIV 的 `GetBlockIdx()` 为 `AIC block * taskRatio + subBlockId`。实现按 `subBlockId` 将 64 行 shard 分成两个 32 行 lane，每条 lane 使用 `SetDim(1)` 的独立 Matmul 客户端遍历完整 N，并写自己的独占 partial 槽。禁止两条 lane 写同一个 `partialScore`；后续改变调度方式时必须重新验证该所有权关系。
+探针确认 CANN 9.1 / `dav-2201` 上 AIV 的 `GetBlockIdx()` 为 `AIC block * taskRatio + subBlockId`。实现按 `subBlockId` 将 64 行 shard 分成两个 32 行 lane，每条 lane 使用 `SetDim(1)` 的独立 Matmul 客户端遍历完整 N。各 AIV 先在 UB 中按 batch 汇总自身 shard sum，最后通过一次 FP32 AtomicAdd 写入共享输出，因此不会发生覆盖；后续改变调度方式时必须重新验证该所有权关系。
 
 ## 7. Host tiling 与 workspace
 
@@ -209,7 +211,7 @@ FusedTilingData
   shardM
   taskCount
   launchBlocks
-  partialScoreOffset / partialScoreCount
+  atomicOutputOffset / atomicOutputCount
   userWorkspaceOffset / userWorkspaceBytes
   systemWorkspaceBytes
   TCubeTiling cubeTiling
@@ -247,7 +249,7 @@ workspace 只保留：
 ```text
 [系统 workspace]
 [异步 Matmul 用户 workspace，如接口要求]
-[每个 task/AIV 独占的 FP32 partialScore]
+[按 32 字节对齐的 FP32 atomicOutput[B]]
 [必要的对齐 padding]
 ```
 
@@ -319,7 +321,6 @@ batchmatmulmaxsum/
 │  └─ fused_tiling.h
 ├─ kernels/
 │  ├─ auto_matmul_fused.asc
-│  ├─ final_reduce.asc
 │  ├─ reference.asc
 │  └─ kernel_dispatch.asc
 ├─ configs/
@@ -442,7 +443,7 @@ batchmatmulmaxsum/
 
 ### P1：并行加入自动融合基线
 
-- 新增 `auto_matmul_fused.asc`、`final_reduce.asc`、`fused_tiling.h`。
+- 新增 `auto_matmul_fused.asc`、`fused_tiling.h`。
 - 暂时保留旧路径，仅通过新 key 100 强制选择新实现。
 - 先实现同步 `Iterate/GetTensorC`。
 
@@ -451,7 +452,7 @@ batchmatmulmaxsum/
 ### P2：补齐通用正确性
 
 - 完成 M/N/K 尾块。
-- 完成所有 B/M shard 和 partialScore 汇总。
+- 完成所有 B/M shard，并在主 MIX kernel 内原子汇总到 batch 输出。
 - 跑 correctness、fuzz、重复执行、多 stream。
 
 退出条件：全部自建正确性测试通过，无超时和死锁。
@@ -510,7 +511,10 @@ TPosition::VECIN
 REGIST_MATMUL_OBJ
 Iterate
 GetTensorC
+AtomicAddBatchSums
 ```
+
+自动融合路径每次调用必须只有一个 `<<<...>>>` 实际启动；`aclrtMemsetAsync` 和 `aclrtMemcpyAsync` 不计为 kernel launch。
 
 ### 12.3 工具链
 
@@ -538,7 +542,7 @@ GetTensorC
 | `baseM * baseN` 导致 UB 不足 | 减小库 tiling base 块，重新生成 tiling；不增加 GM staging |
 | 异步 API 需要额外 workspace 或顺序与预期不同 | 同步版先成为基线，异步作为独立实验 |
 | 极小 shape 被融合启动开销拖慢 | 保留 reference 路径，用实测阈值选择 |
-| 最终归约第二次 launch 占比明显 | 基线记录后再评估单 kernel 归约，不能与第一版同时引入 |
+| AtomicAdd 在大量 M shard 下产生竞争 | 保持单 kernel 约束并记录性能；后续用 batch 所有权或手写同步作为独立 key 对比 |
 | 清理旧文件导致调优工具失效 | P4 中逐项迁移，先跑 Python 测试和 bundle check 再删除旧文件 |
 
 本方案最重要的边界是：先获得一个简单、稳定、可强制选择的官方高阶 API 基线，再做手动同步和 shape 特化。基线 key、测试数据与计时方法一旦建立，后续优化不得静默修改它们。

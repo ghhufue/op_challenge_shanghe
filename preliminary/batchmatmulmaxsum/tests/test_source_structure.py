@@ -78,18 +78,21 @@ class AutoFusedSourceTests(unittest.TestCase):
             "TCubeTiling cubeTiling;",
             "GetOrCreateExecutionResources",
             "LaunchBatchMatmulMaxSumAutoFusedByTranspose",
-            "LaunchReduceAutoFusedPartialScores",
+            "aclrtMemsetAsync(auto fused atomic output)",
+            "aclrtMemcpyAsync(auto fused atomic output to y)",
         ):
             self.assertIn(token, source)
         self.assertNotIn("aclrtSynchronizeStream(", source)
+        self.assertNotIn("LaunchReduceAutoFusedPartialScores", source)
 
-    def test_final_reduce_is_separate_and_writes_each_batch(self):
-        source = (OP_ROOT / "kernels" / "final_reduce.asc").read_text(
+    def test_auto_path_launches_exactly_one_kernel(self):
+        source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
             encoding="utf-8",
         )
-        self.assertIn("__global__ __vector__", source)
-        self.assertIn("output.SetValue(batch, total);", source)
-        self.assertIn("task * kAivPerAic + lane", source)
+        self.assertEqual(source.count("<<<"), 1)
+        self.assertEqual(source.count("AtomicAddBatchSums("), 1)
+        self.assertIn("localSums.GetValue(batchIndex) + laneSum", source)
+        self.assertFalse((OP_ROOT / "kernels" / "final_reduce.asc").exists())
 
     def test_each_row_is_owned_once_without_n_partitioning(self):
         cases = ((1, 1, 20), (3, 65, 20), (64, 129, 20))
@@ -125,7 +128,7 @@ class AutoFusedSourceTests(unittest.TestCase):
         )
         for source in (entry, bundler):
             self.assertIn("auto_matmul_fused.asc", source)
-            self.assertIn("final_reduce.asc", source)
+            self.assertNotIn("final_reduce.asc", source)
             self.assertNotIn('"kernels/bmn.asc"', source)
             self.assertNotIn('"kernels/mixed.asc"', source)
 

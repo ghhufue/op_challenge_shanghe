@@ -37,7 +37,7 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(reference.workspace_bytes, 8 * 4)
         self.assertEqual(reference.launch_blocks, 34)
 
-    def test_auto_baseline_uses_m_shards_and_compact_partials(self):
+    def test_auto_baseline_uses_m_shards_and_atomic_output(self):
         hardware = Hardware(aic=20, aiv=40,
                             system_workspace_bytes=4096)
         plans = enumerate_plans(
@@ -50,6 +50,15 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(auto.single_core_m, 32)
         self.assertEqual(auto.single_core_n, 257)
         self.assertEqual(auto.workspace_bytes, 4608)
+
+        more_m = next(
+            plan for plan in enumerate_plans(
+                Problem(3, 4096, 257, 128), hardware,
+                implemented_only=True,
+            )
+            if plan.config.key == 100
+        )
+        self.assertEqual(more_m.workspace_bytes, auto.workspace_bytes)
 
     def test_auto_baseline_caps_launches_at_available_aic(self):
         plans = enumerate_plans(

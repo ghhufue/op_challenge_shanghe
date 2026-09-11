@@ -3,6 +3,8 @@
 > 本文保留为早期设计与测试规格记录。当前实现架构及后续优化流程以
 > [高阶 Matmul API 基线重构方案](advanced_matmul_api_baseline_refactor_plan.md)
 > 为准；本文中的 BM/BMN、GM staging 和手写 Flag 路径已经退出生产实现。
+> 评测又确认每次迭代必须恰好启动一个 kernel，因此本文中允许第二个归约
+> kernel 的讨论同样只属于历史记录。
 
 本文基于本仓库初赛题目和当前直接调用模板，给出从正确性实现到融合优化的执行流程。
 

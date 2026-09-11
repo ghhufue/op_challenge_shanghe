@@ -8,7 +8,8 @@ The production catalog deliberately starts with two stable candidates:
 Key 100 uses `matmul::Matmul` with C in `VECIN`. It does not use a user-written
 cross-core flag protocol or a GM C-tile staging buffer. Keep key 100 stable so
 future automatic-API tilings and manual-flag implementations have a reproducible
-baseline.
+baseline. Each AIV accumulates its shard sums per batch in UB and performs one
+aligned FP32 AtomicAdd before leaving the single MIX kernel.
 
 For key 100, `tile_m=64` is the two-lane shard size, `vec_m=32` is the row count
 owned by each AIV, and `tile_n=128` is the maximum VECIN tile capacity. The Host
