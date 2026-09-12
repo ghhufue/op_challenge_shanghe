@@ -2,19 +2,6 @@
   "schema_version": 1,
   "candidates": [
     {
-      "key": 0,
-      "symbol": "VECTOR_REFERENCE",
-      "name": "vector_reference",
-      "path": "reference",
-      "implemented": true,
-      "tile_m": 1,
-      "tile_n": 1,
-      "tile_k": 1,
-      "vec_m": 1,
-      "vec_n": 1,
-      "split_n": 1
-    },
-    {
       "key": 100,
       "symbol": "AUTO_MATMUL_FUSED",
       "name": "auto_matmul_fused",

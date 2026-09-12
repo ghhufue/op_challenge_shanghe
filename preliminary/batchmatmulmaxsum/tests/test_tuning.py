@@ -16,27 +16,19 @@ from tuning.model import Hardware, Problem  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):
-    def test_catalog_has_reference_and_fixed_auto_baseline(self):
+    def test_catalog_has_fixed_auto_baseline(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0, 100])
-        self.assertEqual([item.path for item in implemented],
-                         ["reference", "auto_fused"])
-        self.assertEqual(implemented[1].name, "auto_matmul_fused")
-        self.assertEqual(implemented[1].split_n, 1)
+        self.assertEqual([item.key for item in implemented], [100])
+        self.assertEqual([item.path for item in implemented], ["auto_fused"])
+        self.assertEqual(implemented[0].name, "auto_matmul_fused")
+        self.assertEqual(implemented[0].split_n, 1)
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
 
 
 class EnumerationTests(unittest.TestCase):
-    def test_reference_workspace_is_padded_atomic_output(self):
-        plans = enumerate_plans(Problem(2, 17, 33, 40),
-                                implemented_only=True)
-        reference = next(plan for plan in plans if plan.config.key == 0)
-        self.assertEqual(reference.workspace_bytes, 8 * 4)
-        self.assertEqual(reference.launch_blocks, 34)
-
     def test_auto_baseline_uses_m_shards_and_atomic_output(self):
         hardware = Hardware(aic=20, aiv=40,
                             system_workspace_bytes=4096)
@@ -69,12 +61,12 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(auto.task_count, 64 * 3)
         self.assertEqual(auto.launch_blocks, 20)
 
-    def test_capacity_filter_keeps_only_reference_on_tiny_hardware(self):
+    def test_capacity_filter_rejects_auto_baseline_on_tiny_hardware(self):
         tiny = Hardware(ub_bytes=1024, l1_bytes=1024,
                         l0a_bytes=1024, l0b_bytes=1024,
                         l0c_bytes=1024)
         plans = enumerate_plans(Problem(1, 128, 128, 128), tiny)
-        self.assertEqual([plan.config.key for plan in plans], [0])
+        self.assertEqual(plans, [])
 
     def test_invalid_problem_is_rejected(self):
         with self.assertRaises(ValueError):
@@ -86,28 +78,28 @@ class PolicyTests(unittest.TestCase):
         sample = Sample(
             {"B": 1, "M": 16, "N": 16, "K": 32, "work": 8192,
              "bm_rows": 16, "dtype": 1, "tx1": 0, "tx2": 0},
-            {0: 1.0},
+            {100: 1.0},
         )
-        tree = fit_tree([sample], {0}, max_depth=3, min_samples_leaf=1)
+        tree = fit_tree([sample], {100}, max_depth=3, min_samples_leaf=1)
         self.assertIsInstance(tree, Leaf)
-        self.assertEqual(render_policy(tree, {0: "VECTOR_REFERENCE"}),
-                         "return TilingKey::VECTOR_REFERENCE;\n")
+        self.assertEqual(render_policy(tree, {100: "AUTO_MATMUL_FUSED"}),
+                         "return TilingKey::AUTO_MATMUL_FUSED;\n")
 
-    def test_tree_can_compare_reference_with_auto_baseline(self):
+    def test_tree_can_choose_between_auto_candidates(self):
         common = {"B": 1, "N": 128, "K": 64,
                   "dtype": 1, "tx1": 0, "tx2": 0}
         small = Sample(
             dict(common, M=16, work=131072, bm_rows=16),
-            {0: 1.0, 100: 2.0},
+            {100: 1.0, 110: 2.0},
         )
         large = Sample(
             dict(common, M=64, work=524288, bm_rows=64),
-            {0: 2.0, 100: 1.0},
+            {100: 2.0, 110: 1.0},
         )
-        tree = fit_tree([small, large], {0, 100},
+        tree = fit_tree([small, large], {100, 110},
                         max_depth=1, min_samples_leaf=1)
         policy = render_policy(
-            tree, {0: "VECTOR_REFERENCE", 100: "AUTO_MATMUL_FUSED"},
+            tree, {100: "AUTO_MATMUL_FUSED", 110: "AUTO_MATMUL_FUSED_ALT"},
         )
         self.assertIn("shape.m <= 16ULL", policy)
         self.assertIn("TilingKey::AUTO_MATMUL_FUSED", policy)

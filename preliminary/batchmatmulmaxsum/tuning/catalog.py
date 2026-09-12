@@ -30,7 +30,7 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> list[TilingConfig]:
         raise ValueError("candidate names must be unique")
 
     for item in configs:
-        if item.path not in {"reference", "auto_fused"}:
+        if item.path not in {"auto_fused"}:
             raise ValueError(f"unsupported path for key {item.key}: {item.path}")
         if min(item.tile_m, item.tile_n, item.tile_k, item.vec_m, item.vec_n) <= 0:
             raise ValueError(f"tile sizes must be positive for key {item.key}")
