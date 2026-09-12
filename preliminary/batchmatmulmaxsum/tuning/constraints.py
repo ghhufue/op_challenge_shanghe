@@ -27,7 +27,7 @@ def memory_usage(
     l0b_used = policy.l0b_buffers * b_tile
     l0c_used = policy.l0c_buffers * c_tile
     ub_used = (
-        policy.ub_input_buffers * vec_tile
+        config.ub_input_buffers * vec_tile
         + config.tile_m * accumulator_bytes
         + policy.ub_row_buffers * config.vec_m * accumulator_bytes
         + 64 * accumulator_bytes

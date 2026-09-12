@@ -55,9 +55,16 @@ def _materialize(
     launch_blocks = min(task_count, hardware.aic)
     single_core_m = min(problem.m, config.vec_m)
     single_core_n = problem.n
-    atomic_output_offset = ceil_div(
+    workspace_cursor = ceil_div(
         hardware.system_workspace_bytes, 512,
     ) * 512
+    if config.schedule == "async":
+        padded_n = ceil_div(problem.n, config.tile_n) * config.tile_n
+        client_stride = ceil_div(
+            config.vec_m * padded_n * 4, 512,
+        ) * 512
+        workspace_cursor += launch_blocks * 2 * client_stride
+    atomic_output_offset = ceil_div(workspace_cursor, 512) * 512
     atomic_output_bytes = ceil_div(problem.b, 8) * 8 * 4
     workspace_bytes = ceil_div(
         atomic_output_offset + atomic_output_bytes, 512,

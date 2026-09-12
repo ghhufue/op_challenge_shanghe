@@ -86,6 +86,9 @@ class TilingConfig:
     symbol: str
     name: str
     path: str
+    schedule: str
+    reduction: str
+    ub_input_buffers: int
     implemented: bool
     tile_m: int
     tile_n: int

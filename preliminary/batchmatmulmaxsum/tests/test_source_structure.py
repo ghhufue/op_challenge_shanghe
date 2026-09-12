@@ -24,8 +24,15 @@ class AutoFusedSourceTests(unittest.TestCase):
             "REGIST_MATMUL_OBJ",
             "Iterate<true>",
             "GetTensorC<true>",
+            "Iterate<false>",
+            "GetTensorC<false>",
+            "matmulObj.SetWorkspace(clientWorkspace)",
+            "Duplicate(rowMax",
+            "Max(rowMax, rowMax",
+            "WholeReduceSum(segmentMax, rowMax",
+            "TQue<TPosition::VECIN, CBufferCount>",
             "cQueue.EnQue(cLocal)",
-            "cQueue.DeQue<float>()",
+            "cQueue.template DeQue<float>()",
             "matmulObj.End()",
         ):
             self.assertIn(token, source)
@@ -80,6 +87,9 @@ class AutoFusedSourceTests(unittest.TestCase):
             "LaunchBatchMatmulMaxSumAutoFusedByTranspose",
             "aclrtMemsetAsync(auto fused atomic output)",
             "aclrtMemcpyAsync(auto fused atomic output to y)",
+            "AUTO_MATMUL_FUSED_VECTOR",
+            "AUTO_MATMUL_FUSED_ASYNC",
+            "AUTO_MATMUL_FUSED_ASYNC_DB",
         ):
             self.assertIn(token, source)
         self.assertNotIn("aclrtSynchronizeStream(", source)
@@ -138,6 +148,8 @@ class AutoFusedSourceTests(unittest.TestCase):
         )
         self.assertIn("TilingKey::VECTOR_REFERENCE", source)
         self.assertIn("TilingKey::AUTO_MATMUL_FUSED", source)
+        self.assertNotIn("TilingKey::AUTO_MATMUL_FUSED_VECTOR", source)
+        self.assertNotIn("TilingKey::AUTO_MATMUL_FUSED_ASYNC", source)
 
 
 if __name__ == "__main__":

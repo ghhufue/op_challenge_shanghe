@@ -60,6 +60,8 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
     data.vecN = config->vecN;
     data.splitN = config->splitN;
     data.systemWorkspaceBytes = 0;
+    data.matmulCacheOffsetBytes = 0;
+    data.matmulCacheStrideBytes = 0;
     data.atomicOutputOffsetBytes = 0;
 
     if (config->path == KernelPath::REFERENCE) {
@@ -73,7 +75,15 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
         data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));
         data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(tasks, availableCoreNum));
         data.systemWorkspaceBytes = QueryMatmulSystemWorkspaceBytes();
-        data.atomicOutputOffsetBytes = AlignUpU64(data.systemWorkspaceBytes, 512);
+        uint64_t workspaceCursor = AlignUpU64(data.systemWorkspaceBytes, 512);
+        if (config->schedule == MatmulSchedule::ASYNC) {
+            const uint64_t paddedN = AlignUpU64(shape.n, config->tileN);
+            data.matmulCacheOffsetBytes = workspaceCursor;
+            data.matmulCacheStrideBytes = AlignUpU64(
+                static_cast<uint64_t>(config->vecM) * paddedN * sizeof(float), 512);
+            workspaceCursor += data.matmulCacheStrideBytes * data.launchBlocks * kAivPerAic;
+        }
+        data.atomicOutputOffsetBytes = AlignUpU64(workspaceCursor, 512);
         const uint64_t atomicOutputBytes =
             AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
         data.workspaceBytes = AlignUpU64(

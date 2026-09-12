@@ -32,6 +32,14 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> list[TilingConfig]:
     for item in configs:
         if item.path not in {"reference", "auto_fused"}:
             raise ValueError(f"unsupported path for key {item.key}: {item.path}")
+        if item.schedule not in {"sync", "async"}:
+            raise ValueError(f"unsupported schedule for key {item.key}: {item.schedule}")
+        if item.reduction not in {"scalar", "vector"}:
+            raise ValueError(f"unsupported reduction for key {item.key}: {item.reduction}")
+        if item.ub_input_buffers not in {1, 2}:
+            raise ValueError(f"unsupported UB input buffer count for key {item.key}")
+        if item.schedule == "sync" and item.ub_input_buffers != 1:
+            raise ValueError(f"sync key {item.key} must use one UB input buffer")
         if min(item.tile_m, item.tile_n, item.tile_k, item.vec_m, item.vec_n) <= 0:
             raise ValueError(f"tile sizes must be positive for key {item.key}")
         if item.split_n <= 0:

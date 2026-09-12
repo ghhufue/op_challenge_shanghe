@@ -16,14 +16,22 @@ from tuning.model import Hardware, Problem  # noqa: E402
 
 
 class CatalogTests(unittest.TestCase):
-    def test_catalog_has_reference_and_fixed_auto_baseline(self):
+    def test_catalog_has_ordered_single_core_iterations(self):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
-        self.assertEqual([item.key for item in implemented], [0, 100])
+        self.assertEqual([item.key for item in implemented],
+                         [0, 100, 110, 120, 121])
         self.assertEqual([item.path for item in implemented],
-                         ["reference", "auto_fused"])
+                         ["reference", "auto_fused", "auto_fused",
+                          "auto_fused", "auto_fused"])
         self.assertEqual(implemented[1].name, "auto_matmul_fused")
-        self.assertEqual(implemented[1].split_n, 1)
+        self.assertEqual(
+            [(item.schedule, item.reduction, item.ub_input_buffers)
+             for item in implemented[1:]],
+            [("sync", "scalar", 1), ("sync", "vector", 1),
+             ("async", "vector", 1), ("async", "vector", 2)],
+        )
+        self.assertTrue(all(item.split_n == 1 for item in implemented))
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -69,6 +77,20 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(auto.task_count, 64 * 3)
         self.assertEqual(auto.launch_blocks, 20)
 
+    def test_async_candidates_reserve_independent_aiv_workspaces(self):
+        hardware = Hardware(aic=20, aiv=40,
+                            system_workspace_bytes=4096)
+        plans = enumerate_plans(
+            Problem(3, 65, 257, 128), hardware, implemented_only=True,
+        )
+        by_key = {plan.config.key: plan for plan in plans}
+        self.assertEqual(by_key[100].workspace_bytes, 4608)
+        self.assertEqual(by_key[110].workspace_bytes, 4608)
+        self.assertEqual(by_key[120].workspace_bytes, 594432)
+        self.assertEqual(by_key[121].workspace_bytes, 594432)
+        self.assertGreater(by_key[121].memory.ub_used,
+                           by_key[120].memory.ub_used)
+
     def test_capacity_filter_keeps_only_reference_on_tiny_hardware(self):
         tiny = Hardware(ub_bytes=1024, l1_bytes=1024,
                         l0a_bytes=1024, l0b_bytes=1024,
@@ -111,6 +133,31 @@ class PolicyTests(unittest.TestCase):
         )
         self.assertIn("shape.m <= 16ULL", policy)
         self.assertIn("TilingKey::AUTO_MATMUL_FUSED", policy)
+
+    def test_tree_can_select_sync_and_async_candidates_by_n_and_k(self):
+        common = {"B": 1, "M": 64, "work": 1,
+                  "bm_rows": 64, "dtype": 1, "tx1": 0, "tx2": 0}
+        samples = [
+            Sample(dict(common, N=128, K=64),
+                   {110: 1.0, 120: 2.0, 121: 3.0}),
+            Sample(dict(common, N=512, K=64),
+                   {110: 2.0, 120: 1.0, 121: 2.0}),
+            Sample(dict(common, N=512, K=1024),
+                   {110: 3.0, 120: 2.0, 121: 1.0}),
+        ]
+        tree = fit_tree(samples, {110, 120, 121},
+                        max_depth=2, min_samples_leaf=1)
+        policy = render_policy(
+            tree,
+            {110: "AUTO_MATMUL_FUSED_VECTOR",
+             120: "AUTO_MATMUL_FUSED_ASYNC",
+             121: "AUTO_MATMUL_FUSED_ASYNC_DB"},
+        )
+        self.assertIn("shape.n", policy)
+        self.assertIn("shape.k", policy)
+        self.assertIn("TilingKey::AUTO_MATMUL_FUSED_VECTOR", policy)
+        self.assertIn("TilingKey::AUTO_MATMUL_FUSED_ASYNC", policy)
+        self.assertIn("TilingKey::AUTO_MATMUL_FUSED_ASYNC_DB", policy)
 
 
 if __name__ == "__main__":
