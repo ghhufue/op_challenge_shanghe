@@ -6,4 +6,3 @@ preliminary/test_data/
 preliminary/test_results*.json
 preliminary/*/build*/
 preliminary/*/tuning_results/
-.agents/

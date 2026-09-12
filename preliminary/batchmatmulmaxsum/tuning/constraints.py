@@ -10,6 +10,11 @@ def memory_usage(
     hardware: Hardware,
     policy: BufferPolicy,
 ) -> MemoryUsage:
+    if config.path == "reference":
+        atomic_local = 64 * 4
+        return MemoryUsage(0, 0, 0, 0, atomic_local,
+                           atomic_local <= hardware.ub_bytes - policy.ub_reserve_bytes)
+
     input_bytes = 2
     accumulator_bytes = 4
     a_tile = config.tile_m * config.tile_k * input_bytes

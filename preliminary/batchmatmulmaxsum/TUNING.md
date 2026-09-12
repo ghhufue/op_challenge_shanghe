@@ -2,6 +2,7 @@
 
 The production catalog deliberately starts with two stable candidates:
 
+- key `0`, `VECTOR_REFERENCE`: correctness and tiny-shape fallback;
 - key `100`, `AUTO_MATMUL_FUSED`: the fixed high-level Matmul API baseline.
 
 Key 100 uses `matmul::Matmul` with C in `VECIN`. It does not use a user-written

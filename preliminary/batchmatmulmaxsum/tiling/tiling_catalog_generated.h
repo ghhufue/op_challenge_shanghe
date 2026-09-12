@@ -6,10 +6,11 @@
 namespace bmms {
 
 enum class TilingKey : uint32_t {
+    VECTOR_REFERENCE = 0,
     AUTO_MATMUL_FUSED = 100,
 };
 
-enum class KernelPath : uint8_t { AUTO_FUSED };
+enum class KernelPath : uint8_t { REFERENCE, AUTO_FUSED };
 
 struct StaticTilingConfig {
     TilingKey key;
@@ -25,6 +26,7 @@ struct StaticTilingConfig {
 };
 
 constexpr StaticTilingConfig kTilingConfigs[] = {
+    {TilingKey::VECTOR_REFERENCE, "vector_reference", KernelPath::REFERENCE, true, 1, 1, 1, 1, 1, 1},
     {TilingKey::AUTO_MATMUL_FUSED, "auto_matmul_fused", KernelPath::AUTO_FUSED, true, 64, 128, 64, 32, 128, 1},
 };
 

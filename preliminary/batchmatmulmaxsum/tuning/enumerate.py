@@ -15,6 +15,8 @@ def _estimate(
     launch_blocks: int,
     available_aic: int,
 ) -> float:
+    if config.path == "reference":
+        return 0.0
     useful_m = min(problem.m, config.tile_m) / config.tile_m
     useful_n = min(problem.n, config.tile_n) / config.tile_n
     useful_k = min(problem.k, config.tile_k) / config.tile_k
@@ -35,6 +37,16 @@ def _materialize(
     memory = memory_usage(config, hardware, policy)
     if not memory.legal:
         return None
+
+    if config.path == "reference":
+        task_count = problem.b * problem.m
+        split_m = min(problem.m, hardware.aiv)
+        launch_blocks = min(task_count, hardware.aiv)
+        workspace_bytes = ceil_div(problem.b, 8) * 8 * 4
+        return CandidatePlan(
+            config, split_m, 1, task_count, launch_blocks,
+            1, problem.n, workspace_bytes, memory, 0.0,
+        )
 
     max_m_groups = ceil_div(problem.m, config.tile_m)
     split_n = config.split_n

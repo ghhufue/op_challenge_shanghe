@@ -62,7 +62,12 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
     data.systemWorkspaceBytes = 0;
     data.atomicOutputOffsetBytes = 0;
 
-    if (config->path == KernelPath::AUTO_FUSED) {
+    if (config->path == KernelPath::REFERENCE) {
+        const uint64_t taskCount = static_cast<uint64_t>(shape.b) * shape.m;
+        data.splitM = static_cast<uint32_t>(std::min<int64_t>(shape.m, availableCoreNum));
+        data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(taskCount, availableCoreNum));
+        data.workspaceBytes = AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
+    } else if (config->path == KernelPath::AUTO_FUSED) {
         const uint64_t mGroups = CeilDivU64(shape.m, config->tileM);
         const uint64_t tasks = static_cast<uint64_t>(shape.b) * mGroups;
         data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));

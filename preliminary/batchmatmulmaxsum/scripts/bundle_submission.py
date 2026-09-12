@@ -16,6 +16,7 @@ FRAGMENTS = (
     "host/input_validation.h",
     "host/fused_tiling.h",
     "tiling/tiling_policy.h",
+    "kernels/reference.asc",
     "kernels/auto_matmul_fused.asc",
     "kernels/kernel_dispatch.asc",
     "kernel.asc",

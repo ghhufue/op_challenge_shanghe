@@ -24,8 +24,7 @@ class AutoFusedSourceTests(unittest.TestCase):
             "REGIST_MATMUL_OBJ",
             "Iterate<true>",
             "GetTensorC<true>",
-            "cQueue.EnQue(first)",
-            "cQueue.EnQue(next)",
+            "cQueue.EnQue(cLocal)",
             "cQueue.DeQue<float>()",
             "matmulObj.End()",
         ):
@@ -91,7 +90,7 @@ class AutoFusedSourceTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertEqual(source.count("<<<"), 1)
-        self.assertEqual(source.count("AtomicAddBatchSums("), 2)
+        self.assertEqual(source.count("AtomicAddBatchSums("), 1)
         self.assertIn("localSums.GetValue(batchIndex) + laneSum", source)
         self.assertFalse((OP_ROOT / "kernels" / "final_reduce.asc").exists())
 
@@ -130,16 +129,15 @@ class AutoFusedSourceTests(unittest.TestCase):
         for source in (entry, bundler):
             self.assertIn("auto_matmul_fused.asc", source)
             self.assertNotIn("final_reduce.asc", source)
-            self.assertNotIn("reference.asc", source)
             self.assertNotIn('"kernels/bmn.asc"', source)
             self.assertNotIn('"kernels/mixed.asc"', source)
 
-    def test_submission_policy_keeps_only_fixed_baseline(self):
+    def test_submission_policy_keeps_reference_and_fixed_baseline(self):
         source = (OP_ROOT / "tiling" / "submission_policy.h").read_text(
             encoding="utf-8",
         )
+        self.assertIn("TilingKey::VECTOR_REFERENCE", source)
         self.assertIn("TilingKey::AUTO_MATMUL_FUSED", source)
-        self.assertNotIn("TilingKey::VECTOR_REFERENCE", source)
 
 
 if __name__ == "__main__":
