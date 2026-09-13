@@ -11,6 +11,21 @@
       ]
     },
     {
+      "name": "remote-debug",
+      "type": "msdebug-mi-remote",
+      "request": "launch",
+      "cwd": "${remoteWorkspaceFolder}",
+      "target": "${remoteWorkspaceFolder}/build/${workspaceFolderBasename}",
+      "remoteConfig": {
+        "host": "",
+        "port": 55555,
+        "remoteWorkspaceFolder": "d:\\code\\op_challenge_shanghe"
+      },
+      "environmentScripts": [
+        "${workspaceFolder}/.vscode/.env"
+      ]
+    },
+    {
       "name": "msdebug-cpu",
       "type": "msdebug-mi",
       "request": "launch",
@@ -34,6 +49,19 @@
         "${workspaceFolder}/.vscode/.env"
       ],
       "skipEnvCheck": true
+    },
+    {
+      "name": "msdebug-triton-npu",
+      "type": "msdebug-mi",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "target": "/usr/bin/python3",
+      "targetArgs": [
+        "${workspaceFolder}/op.py"
+      ],
+      "environmentScripts": [
+        "${workspaceFolder}/.vscode/.env"
+      ]
     }
   ]
 }
