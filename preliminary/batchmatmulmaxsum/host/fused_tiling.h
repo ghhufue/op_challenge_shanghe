@@ -35,12 +35,14 @@ inline uint64_t QueryMatmulSystemWorkspaceBytes() {
 template<uint32_t TileM, uint32_t TileN, uint32_t TileK>
 inline AscendC::tiling::TCubeTiling MakeAutoFusedCubeTiling(
         const Shape& shape, int32_t inputDtype,
-        bool transposeX1, bool transposeX2) {
+        bool transposeX1, bool transposeX2,
+        uint32_t requestedSingleCoreN = 0) {
     static_assert(TileM % kAivPerAic == 0,
                   "M shard must split evenly across the paired AIV cores");
     constexpr uint32_t rowsPerLane = TileM / kAivPerAic;
-    const uint32_t alignedN = static_cast<uint32_t>(
-        ((shape.n + 15) / 16) * 16);
+    const uint32_t singleCoreN = requestedSingleCoreN == 0
+        ? static_cast<uint32_t>(shape.n) : requestedSingleCoreN;
+    const uint32_t alignedN = ((singleCoreN + 15) / 16) * 16;
     const uint32_t baseN = std::min<uint32_t>(TileN, alignedN);
     const matmul_tiling::DataType dataType = inputDtype == 1
         ? matmul_tiling::DataType::DT_FLOAT16
@@ -67,7 +69,7 @@ inline AscendC::tiling::TCubeTiling MakeAutoFusedCubeTiling(
                            static_cast<int32_t>(shape.n),
                            static_cast<int32_t>(shape.k)) != 0 ||
         tiling.SetShape(static_cast<int32_t>(rowsPerLane),
-                        static_cast<int32_t>(shape.n),
+                        static_cast<int32_t>(singleCoreN),
                         static_cast<int32_t>(shape.k)) != 0 ||
         tiling.EnableBias(false) != 0 ||
         tiling.SetTraverse(matmul_tiling::MatrixTraverse::FIRSTM) != 0 ||
@@ -86,7 +88,7 @@ inline AscendC::tiling::TCubeTiling MakeAutoFusedCubeTiling(
         result.baseN < 1 || result.baseN > static_cast<int32_t>(TileN) ||
         result.baseN % 8 != 0 || result.usedCoreNum != 1 ||
         result.singleCoreM != static_cast<int32_t>(rowsPerLane) ||
-        result.singleCoreN < static_cast<int32_t>(shape.n)) {
+        result.singleCoreN < static_cast<int32_t>(singleCoreN)) {
         throw std::runtime_error(
             "Automatic Matmul tiling did not preserve full-N row ownership");
     }

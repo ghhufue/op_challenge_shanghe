@@ -1,0 +1,64 @@
+=== 上板性能统计摘要 (msprof) ===
+Op: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb0ELb0ELj1ELj64ELj128ELj64EEEvPhS1_S1_S1_S1_mN7AscendC6tiling11TCubeTilingENS_5ShapeEj
+Type: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb0ELb0ELj1ELj64ELj128ELj64EEEvPhS1_S1_S1_S1_mN7AscendC6tiling11TCubeTilingENS_5ShapeEj | TaskType: MIX_AIC | Duration: 62.399us | BlockDim: 1 (mix=2)
+
+[注] msprof 的 op_summary 是 per-op 聚合值（不含逐核 min/avg/max）；
+     如需逐核数据请改用 msprof op (需要 msopprof 二进制)。
+
+--- Pipe ratios (主导核 = aic) ---
+  aicore_time: 62.045us | aiv_time: 51.844us
+  aic: mac=  2.60% | mte1=  5.60% | mte2= 41.00% | fixpipe= 40.90% | scalar= 95.10% | icache_miss=  1.90%
+  aiv: vec=  1.40% | scalar= 18.00% | mte2=  2.80% | mte3=  4.10% | icache_miss=  3.00%
+  cube_utilization: 4.97%
+
+--- 头开销 ---
+  Task Duration: 62.399us | 核最长耗时: 62.045us | 头开销: 0.354us (0.6%)
+
+--- Memory 带宽 (aic-metrics=Memory) ---
+  aic main_mem read: 0.86 GB/s
+  aic main_mem write: 0.08 GB/s
+  aiv main_mem read: 0.03 GB/s
+  aiv main_mem write: 0.00 GB/s
+  aic L1 read: 21.77 GB/s
+  aic L1 write: 4.31 GB/s
+  aiv UB read: 0.33 GB/s
+  aiv UB write: 2.04 GB/s
+
+--- MemoryL0 ---
+  L0A read: 3.14 GB/s
+  L0A write: 3.49 GB/s
+  L0B read: 11.41 GB/s
+  L0B write: 15.37 GB/s
+  L0C read (cube): 1.44 GB/s
+  L0C write (cube): 2.88 GB/s
+
+--- MemoryUB ---
+  UB read (vector): 0.09 GB/s
+  UB write (vector): 0.09 GB/s
+  UB read (scalar): 0.08 GB/s
+  UB write (scalar): 0.06 GB/s
+
+--- ArithmeticUtilization ---
+  mac_fp16=  2.60% | cube_fops=21118976
+
+--- 逐核负载均衡 (sample-based aicore.db) ---
+  有效核数: 15  | 主频推算: 1.741 GHz (0.5744 ns/cycle)
+  min=53.137us  avg=54.784us  max=62.045us
+  (max-min)/max = 14.36%  ->  警告 (10~30%)
+  Top-3 慢核: Core23=62.05us, Core17=55.39us, Core2=55.18us
+  Top-3 快核: Core4=53.14us, Core7=53.49us, Core12=53.72us
+
+--- 原始数据位置 ---
+  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/round_003/
+  原始 PROF: /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/
+  按 aic-metrics 拆分的 op_summary_<Metric>.csv 均已复制到归档目录，
+  如需逐列查看可直接 Read。
+
+--- Metric 来源 ---
+  PipeUtilization        <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_PipeUtilization/PROF_000001_20260913204813841_00095874DHRNKFMM/mindstudio_profiler_output/op_summary_20260913204819.csv
+  ArithmeticUtilization  <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_ArithmeticUtilization/PROF_000001_20260913204820876_00096254POAPJFQL/mindstudio_profiler_output/op_summary_20260913204826.csv
+  Memory                 <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_Memory/PROF_000001_20260913204827914_00096624NHDCBKEH/mindstudio_profiler_output/op_summary_20260913204833.csv
+  MemoryL0               <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_MemoryL0/PROF_000001_20260913204834946_00097017BFHOFBIH/mindstudio_profiler_output/op_summary_20260913204840.csv
+  MemoryUB               <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_MemoryUB/PROF_000001_20260913204841983_00097393CJBGJALE/mindstudio_profiler_output/op_summary_20260913204847.csv
+  L2Cache                <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_L2Cache/PROF_000001_20260913204849016_00097779CAMQBHLI/mindstudio_profiler_output/op_summary_20260913204854.csv
+  ResourceConflictRatio  <- /tmp/bmms_msprof_c20/PROF_GROUP_20260913_204807/PROF_ResourceConflictRatio/PROF_000001_20260913204856053_00098165MKIRIJNA/mindstudio_profiler_output/op_summary_20260913204901.csv

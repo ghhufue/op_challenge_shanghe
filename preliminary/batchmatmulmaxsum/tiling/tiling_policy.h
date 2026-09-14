@@ -59,9 +59,11 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
     data.vecM = config->vecM;
     data.vecN = config->vecN;
     data.splitN = config->splitN;
+    data.nShardColumns = static_cast<uint32_t>(shape.n);
     data.systemWorkspaceBytes = 0;
     data.matmulCacheOffsetBytes = 0;
     data.matmulCacheStrideBytes = 0;
+    data.partialMaxOffsetBytes = 0;
     data.atomicOutputOffsetBytes = 0;
 
     if (config->path == KernelPath::REFERENCE) {
@@ -71,17 +73,48 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
         data.workspaceBytes = AlignUpU64(shape.b, kAtomicAlignmentFloats) * sizeof(float);
     } else if (config->path == KernelPath::AUTO_FUSED) {
         const uint64_t mGroups = CeilDivU64(shape.m, config->tileM);
-        const uint64_t tasks = static_cast<uint64_t>(shape.b) * mGroups;
+        const uint64_t mTasks = static_cast<uint64_t>(shape.b) * mGroups;
+        const bool splitNPath = config->splitN > 1;
+        if (splitNPath) {
+            const uint64_t nTileCount = CeilDivU64(shape.n, config->tileN);
+            const uint64_t desiredNShards = std::max<uint64_t>(
+                1, static_cast<uint64_t>(availableCoreNum) / mTasks);
+            data.splitN = static_cast<uint32_t>(std::max<uint64_t>(
+                1, std::min<uint64_t>(nTileCount, desiredNShards)));
+            data.nShardColumns = 0;
+            for (uint32_t shard = 0; shard < data.splitN; ++shard) {
+                const uint64_t begin =
+                    (static_cast<uint64_t>(shape.n) * shard /
+                     data.splitN / 16) * 16;
+                const uint64_t end = shard + 1 == data.splitN
+                    ? static_cast<uint64_t>(shape.n)
+                    : (static_cast<uint64_t>(shape.n) * (shard + 1) /
+                       data.splitN / 16) * 16;
+                data.nShardColumns = std::max<uint32_t>(
+                    data.nShardColumns,
+                    static_cast<uint32_t>(end - begin));
+            }
+        } else {
+            data.splitN = 1;
+        }
+        const uint64_t tasks = mTasks * data.splitN;
         data.splitM = static_cast<uint32_t>(std::min<uint64_t>(mGroups, availableCoreNum));
         data.launchBlocks = static_cast<uint32_t>(std::min<uint64_t>(tasks, availableCoreNum));
         data.systemWorkspaceBytes = QueryMatmulSystemWorkspaceBytes();
         uint64_t workspaceCursor = AlignUpU64(data.systemWorkspaceBytes, 512);
         if (config->schedule == MatmulSchedule::ASYNC) {
-            const uint64_t paddedN = AlignUpU64(shape.n, config->tileN);
+            const uint64_t paddedN = AlignUpU64(
+                data.nShardColumns, config->tileN);
             data.matmulCacheOffsetBytes = workspaceCursor;
             data.matmulCacheStrideBytes = AlignUpU64(
                 static_cast<uint64_t>(config->vecM) * paddedN * sizeof(float), 512);
             workspaceCursor += data.matmulCacheStrideBytes * data.launchBlocks * kAivPerAic;
+        }
+        if (splitNPath) {
+            data.partialMaxOffsetBytes = AlignUpU64(workspaceCursor, 512);
+            const uint64_t partialMaxBytes =
+                tasks * kAivPerAic * config->vecM * sizeof(float);
+            workspaceCursor = data.partialMaxOffsetBytes + partialMaxBytes;
         }
         data.atomicOutputOffsetBytes = AlignUpU64(workspaceCursor, 512);
         const uint64_t atomicOutputBytes =

@@ -65,13 +65,16 @@ class AutoFusedSourceTests(unittest.TestCase):
         ):
             self.assertIn(token, source)
 
-    def test_vector_reduction_uses_the_runtime_matmul_base_n(self):
+    def test_vector_reduction_uses_the_compact_runtime_tile_width(self):
         source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
             encoding="utf-8",
         )
         self.assertIn("cubeTiling.baseN", source)
         self.assertIn("nTile * baseN", source)
-        self.assertIn("baseN / 8", source)
+        self.assertIn("actualN / FloatBlockElements", source)
+        self.assertIn("actualN % FloatBlockElements", source)
+        self.assertIn("row * actualN", source)
+        self.assertNotIn("baseN / 8", source)
 
     def test_dispatch_keeps_workspace_cached_and_asynchronous(self):
         source = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
@@ -90,18 +93,21 @@ class AutoFusedSourceTests(unittest.TestCase):
             "AUTO_MATMUL_FUSED_VECTOR",
             "AUTO_MATMUL_FUSED_ASYNC",
             "AUTO_MATMUL_FUSED_ASYNC_DB",
+            "AUTO_MATMUL_FUSED_SPLIT_N",
         ):
             self.assertIn(token, source)
         self.assertNotIn("aclrtSynchronizeStream(", source)
         self.assertNotIn("LaunchReduceAutoFusedPartialScores", source)
 
-    def test_auto_path_launches_exactly_one_kernel(self):
+    def test_auto_path_has_fused_and_split_n_finalize_kernels(self):
         source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
             encoding="utf-8",
         )
-        self.assertEqual(source.count("<<<"), 1)
-        self.assertEqual(source.count("AtomicAddBatchSums("), 1)
+        self.assertEqual(source.count("<<<"), 3)
+        self.assertEqual(source.count("AtomicAddBatchSums("), 2)
         self.assertIn("localSums.GetValue(batchIndex) + laneSum", source)
+        self.assertIn("FinalizeAutoFusedSplitN", source)
+        self.assertIn("partialMax.GetValue", source)
         self.assertFalse((OP_ROOT / "kernels" / "final_reduce.asc").exists())
 
     def test_each_row_is_owned_once_without_n_partitioning(self):
@@ -142,14 +148,18 @@ class AutoFusedSourceTests(unittest.TestCase):
             self.assertNotIn('"kernels/bmn.asc"', source)
             self.assertNotIn('"kernels/mixed.asc"', source)
 
-    def test_submission_policy_keeps_reference_and_fixed_baseline(self):
+    def test_submission_policy_routes_large_and_underfilled_work(self):
         source = (OP_ROOT / "tiling" / "submission_policy.h").read_text(
             encoding="utf-8",
         )
         self.assertIn("TilingKey::VECTOR_REFERENCE", source)
         self.assertIn("TilingKey::AUTO_MATMUL_FUSED", source)
         self.assertNotIn("TilingKey::AUTO_MATMUL_FUSED_VECTOR", source)
-        self.assertNotIn("TilingKey::AUTO_MATMUL_FUSED_ASYNC", source)
+        self.assertIn("TilingKey::AUTO_MATMUL_FUSED_ASYNC_DB", source)
+        self.assertIn("TilingKey::AUTO_MATMUL_FUSED_SPLIT_N", source)
+        self.assertIn("300000ULL", source)
+        self.assertIn("workPerMTask", source)
+        self.assertIn("1048576ULL", source)
 
 
 if __name__ == "__main__":

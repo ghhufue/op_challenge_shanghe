@@ -11,6 +11,9 @@ three ordered single-core experiments:
   one VECIN UB slot;
 - key `121`, `AUTO_MATMUL_FUSED_ASYNC_DB`: key 120 plus two VECIN UB slots and
   a prologue/steady-state/epilogue drain.
+- key `130`, `AUTO_MATMUL_FUSED_SPLIT_N`: dynamically partitions N to fill
+  otherwise idle AIC cores. The first kernel stores padded per-row partial
+  maxima and a second Vector kernel takes max across N shards before summing M.
 
 Key 100 uses `matmul::Matmul` with C in `VECIN`. It does not use a user-written
 cross-core flag protocol or a GM C-tile staging buffer. Keep key 100 stable so
@@ -40,9 +43,17 @@ python scripts/generate_tiling_catalog.py
 python scripts/generate_tiling_catalog.py --check
 ```
 
-The `split_n` field is reserved for future experiments. Current implemented
-candidates must use `split_n=1`; adding N splitting requires a kernel that
-stores and correctly merges per-row partial maxima.
+For ordinary candidates `split_n=1`. A value greater than one marks a dynamic
+split-N candidate: the host chooses up to `ceil(N / tile_n)` balanced shards,
+capped so the expanded task grid does not oversubscribe available AIC cores.
+If only one shard is useful, key 130 reuses the key 121 execution path. N
+shards cannot use the regular atomic-sum output because their partial results
+require max before the final M reduction.
+
+The submission policy selects key 130 only when the device is underfilled and
+each M task has at least `N*K >= 2^20` work. Measurements below that crossover
+showed that the second launch and workspace reduction can outweigh the extra
+parallelism.
 
 Suggested key ranges:
 
@@ -50,6 +61,7 @@ Suggested key ranges:
 100        fixed automatic-fusion baseline
 110-119    automatic API vector or baseM/baseN/baseK variants
 120-129    automatic API async and UB-pipeline variants
+130-139    automatic API split-N and second-stage reduction variants
 200-299    manual flag-controlled fusion variants
 ```
 

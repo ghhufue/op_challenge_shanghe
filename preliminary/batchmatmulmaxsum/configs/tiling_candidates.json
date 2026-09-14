@@ -80,6 +80,22 @@
       "vec_m": 32,
       "vec_n": 128,
       "split_n": 1
+    },
+    {
+      "key": 130,
+      "symbol": "AUTO_MATMUL_FUSED_SPLIT_N",
+      "name": "auto_matmul_fused_split_n",
+      "path": "auto_fused",
+      "schedule": "async",
+      "reduction": "vector",
+      "ub_input_buffers": 2,
+      "implemented": true,
+      "tile_m": 64,
+      "tile_n": 128,
+      "tile_k": 64,
+      "vec_m": 32,
+      "vec_n": 128,
+      "split_n": 2
     }
   ]
 }

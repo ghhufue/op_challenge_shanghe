@@ -44,8 +44,13 @@ def load_catalog(path: Path = DEFAULT_CATALOG) -> list[TilingConfig]:
             raise ValueError(f"tile sizes must be positive for key {item.key}")
         if item.split_n <= 0:
             raise ValueError(f"split_n must be positive for key {item.key}")
-        if item.split_n != 1:
+        if item.split_n != 1 and (
+            item.path != "auto_fused"
+            or item.schedule != "async"
+            or item.reduction != "vector"
+            or item.ub_input_buffers != 2
+        ):
             raise ValueError(
-                f"split_n is reserved but not implemented by key {item.key}"
+                f"split_n key {item.key} requires async vector double buffering"
             )
     return configs

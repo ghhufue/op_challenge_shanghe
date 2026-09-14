@@ -20,18 +20,20 @@ class CatalogTests(unittest.TestCase):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
         self.assertEqual([item.key for item in implemented],
-                         [0, 100, 110, 120, 121])
+                         [0, 100, 110, 120, 121, 130])
         self.assertEqual([item.path for item in implemented],
                          ["reference", "auto_fused", "auto_fused",
-                          "auto_fused", "auto_fused"])
+                          "auto_fused", "auto_fused", "auto_fused"])
         self.assertEqual(implemented[1].name, "auto_matmul_fused")
         self.assertEqual(
             [(item.schedule, item.reduction, item.ub_input_buffers)
              for item in implemented[1:]],
             [("sync", "scalar", 1), ("sync", "vector", 1),
-             ("async", "vector", 1), ("async", "vector", 2)],
+             ("async", "vector", 1), ("async", "vector", 2),
+             ("async", "vector", 2)],
         )
-        self.assertTrue(all(item.split_n == 1 for item in implemented))
+        self.assertTrue(all(item.split_n == 1 for item in implemented[:-1]))
+        self.assertEqual(implemented[-1].split_n, 2)
 
     def test_generated_header_is_current(self):
         self.assertEqual(OUTPUT.read_text(encoding="utf-8"), render())
@@ -90,6 +92,29 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(by_key[121].workspace_bytes, 594432)
         self.assertGreater(by_key[121].memory.ub_used,
                            by_key[120].memory.ub_used)
+
+    def test_split_n_fills_idle_aic_and_reserves_partial_maxima(self):
+        hardware = Hardware(aic=20, aiv=40,
+                            system_workspace_bytes=4096)
+        plans = enumerate_plans(
+            Problem(1, 33, 513, 256), hardware, implemented_only=True,
+        )
+        split = next(plan for plan in plans if plan.config.key == 130)
+        self.assertEqual(split.split_n, 5)
+        self.assertEqual(split.task_count, 5)
+        self.assertEqual(split.launch_blocks, 5)
+        self.assertEqual(split.single_core_n, 113)
+        self.assertEqual(split.workspace_bytes, 169984)
+
+        already_full = next(
+            plan for plan in enumerate_plans(
+                Problem(64, 3, 5, 40), hardware, implemented_only=True,
+            )
+            if plan.config.key == 130
+        )
+        self.assertEqual(already_full.split_n, 1)
+        self.assertEqual(already_full.task_count, 64)
+        self.assertEqual(already_full.launch_blocks, 20)
 
     def test_capacity_filter_keeps_only_reference_on_tiny_hardware(self):
         tiny = Hardware(ub_bytes=1024, l1_bytes=1024,

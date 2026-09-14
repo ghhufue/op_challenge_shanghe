@@ -30,10 +30,12 @@ struct TilingData {
     uint32_t vecN;
     uint32_t splitM;
     uint32_t splitN;
+    uint32_t nShardColumns;
     uint32_t launchBlocks;
     uint64_t systemWorkspaceBytes;
     uint64_t matmulCacheOffsetBytes;
     uint64_t matmulCacheStrideBytes;
+    uint64_t partialMaxOffsetBytes;
     uint64_t atomicOutputOffsetBytes;
     uint64_t workspaceBytes;
 };
