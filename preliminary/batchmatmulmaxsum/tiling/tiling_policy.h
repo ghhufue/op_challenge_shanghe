@@ -64,6 +64,8 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
     data.matmulCacheOffsetBytes = 0;
     data.matmulCacheStrideBytes = 0;
     data.partialMaxOffsetBytes = 0;
+    data.syncWorkspaceOffsetBytes = 0;
+    data.syncWorkspaceBytes = 0;
     data.atomicOutputOffsetBytes = 0;
 
     if (config->path == KernelPath::REFERENCE) {
@@ -115,6 +117,11 @@ inline Plan MakePlan(const Shape& shape, int64_t availableCoreNum, TilingKey key
             const uint64_t partialMaxBytes =
                 tasks * kAivPerAic * config->vecM * sizeof(float);
             workspaceCursor = data.partialMaxOffsetBytes + partialMaxBytes;
+            data.syncWorkspaceOffsetBytes = AlignUpU64(workspaceCursor, 512);
+            data.syncWorkspaceBytes = static_cast<uint64_t>(
+                data.launchBlocks) * kAivPerAic * kSoftSyncSlotBytes;
+            workspaceCursor = data.syncWorkspaceOffsetBytes +
+                data.syncWorkspaceBytes;
         }
         data.atomicOutputOffsetBytes = AlignUpU64(workspaceCursor, 512);
         const uint64_t atomicOutputBytes =

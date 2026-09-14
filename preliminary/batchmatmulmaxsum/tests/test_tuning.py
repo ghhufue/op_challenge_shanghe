@@ -104,7 +104,7 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(split.task_count, 5)
         self.assertEqual(split.launch_blocks, 5)
         self.assertEqual(split.single_core_n, 113)
-        self.assertEqual(split.workspace_bytes, 169984)
+        self.assertEqual(split.workspace_bytes, 170496)
 
         already_full = next(
             plan for plan in enumerate_plans(

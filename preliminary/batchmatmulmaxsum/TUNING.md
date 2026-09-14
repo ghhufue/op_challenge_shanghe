@@ -12,8 +12,9 @@ three ordered single-core experiments:
 - key `121`, `AUTO_MATMUL_FUSED_ASYNC_DB`: key 120 plus two VECIN UB slots and
   a prologue/steady-state/epilogue drain.
 - key `130`, `AUTO_MATMUL_FUSED_SPLIT_N`: dynamically partitions N to fill
-  otherwise idle AIC cores. The first kernel stores padded per-row partial
-  maxima and a second Vector kernel takes max across N shards before summing M.
+  otherwise idle AIC cores. One MIX kernel first stores padded per-row partial
+  maxima, synchronizes all of its AIV subblocks with a dedicated software
+  barrier, then takes max across N shards before summing M.
 
 Key 100 uses `matmul::Matmul` with C in `VECIN`. It does not use a user-written
 cross-core flag protocol or a GM C-tile staging buffer. Keep key 100 stable so
@@ -52,8 +53,9 @@ require max before the final M reduction.
 
 The submission policy selects key 130 only when the device is underfilled and
 each M task has at least `N*K >= 2^20` work. Measurements below that crossover
-showed that the second launch and workspace reduction can outweigh the extra
-parallelism.
+showed that the historical separate finalizer and workspace reduction could
+outweigh the extra parallelism. The finalizer is now fused into the same kernel
+launch; the conservative crossover remains until the fused version is profiled.
 
 Suggested key ranges:
 
@@ -61,7 +63,7 @@ Suggested key ranges:
 100        fixed automatic-fusion baseline
 110-119    automatic API vector or baseM/baseN/baseK variants
 120-129    automatic API async and UB-pipeline variants
-130-139    automatic API split-N and second-stage reduction variants
+130-139    automatic API split-N and in-kernel second-stage reduction variants
 200-299    manual flag-controlled fusion variants
 ```
 

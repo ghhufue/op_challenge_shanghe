@@ -8,6 +8,7 @@ namespace bmms {
 constexpr uint32_t kAtomicAlignmentFloats = 8;
 constexpr uint32_t kMaxOutputBatches = 64;
 constexpr uint32_t kAivPerAic = 2;
+constexpr uint32_t kSoftSyncSlotBytes = 32;
 static_assert(kMaxOutputBatches % kAtomicAlignmentFloats == 0,
               "Atomic output buffer must be a whole number of 32-byte blocks");
 
@@ -36,6 +37,8 @@ struct TilingData {
     uint64_t matmulCacheOffsetBytes;
     uint64_t matmulCacheStrideBytes;
     uint64_t partialMaxOffsetBytes;
+    uint64_t syncWorkspaceOffsetBytes;
+    uint64_t syncWorkspaceBytes;
     uint64_t atomicOutputOffsetBytes;
     uint64_t workspaceBytes;
 };

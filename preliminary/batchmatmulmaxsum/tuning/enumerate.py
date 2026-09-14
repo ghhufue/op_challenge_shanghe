@@ -88,6 +88,8 @@ def _materialize(
             partial_max_offset
             + task_count * 2 * config.vec_m * 4
         )
+        sync_workspace_offset = ceil_div(workspace_cursor, 512) * 512
+        workspace_cursor = sync_workspace_offset + launch_blocks * 2 * 32
     atomic_output_offset = ceil_div(workspace_cursor, 512) * 512
     atomic_output_bytes = ceil_div(problem.b, 8) * 8 * 4
     workspace_bytes = ceil_div(

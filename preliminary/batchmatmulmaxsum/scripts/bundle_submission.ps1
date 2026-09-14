@@ -14,6 +14,7 @@ $fragments = @(
     "host/fused_tiling.h",
     "tiling/tiling_policy.h",
     "kernels/reference.asc",
+    "kernels/auto_matmul_fused_split_n.asc",
     "kernels/auto_matmul_fused.asc",
     "kernels/kernel_dispatch.asc",
     "kernel.asc"
