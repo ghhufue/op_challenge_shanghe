@@ -13,10 +13,23 @@ $fragments = @(
     "host/input_validation.h",
     "host/fused_tiling.h",
     "tiling/tiling_policy.h",
-    "kernels/reference.asc",
-    "kernels/auto_matmul_fused_split_n.asc",
-    "kernels/auto_matmul_fused.asc",
-    "kernels/kernel_dispatch.asc",
+    "kernels/reference/kernel.asc",
+    "kernels/matmul_api/split_n_reduce.asc",
+    "kernels/matmul_api/class_header.inc",
+    "kernels/matmul_api/init.inc",
+    "kernels/matmul_api/process.inc",
+    "kernels/matmul_api/row_max.inc",
+    "kernels/matmul_api/synchronous_tiles.inc",
+    "kernels/matmul_api/asynchronous_tiles.inc",
+    "kernels/matmul_api/tile_reduction.inc",
+    "kernels/matmul_api/lane_sum.inc",
+    "kernels/matmul_api/partial_max_and_state.inc",
+    "kernels/matmul_api/launch.inc",
+    "kernels/dispatch/resources.inc",
+    "kernels/dispatch/reference_plan.inc",
+    "kernels/dispatch/auto_plan.inc",
+    "kernels/dispatch/split_n_plan.inc",
+    "kernels/dispatch/execute_plan.inc",
     "kernel.asc"
 )
 
@@ -68,7 +81,7 @@ foreach ($relativePath in $fragments) {
             $body.Add('#include "submission_policy.h"')
             continue
         }
-        if ($relativePath -eq "kernels/auto_matmul_fused.asc" -and
+        if ($relativePath -eq "kernels/matmul_api/class_header.inc" -and
             $line -match '^\s*#include\s+"lib/matmul_intf\.h"\s*$') {
             $body.Add('#include "lib/matmul_intf.h"')
             continue
@@ -79,8 +92,11 @@ foreach ($relativePath in $fragments) {
         $body.Add($line)
     }
 
+    # Some .inc fragments begin inside an open class definition. Preserve
+    # their indentation while trimming separator-only newlines.
+    $fragmentBody = ($body -join "`n").Trim([char[]]"`r`n")
     $sections.Add("// ===== BEGIN $relativePath =====`n" +
-                  (($body -join "`n").Trim()) +
+                  $fragmentBody +
                   "`n// ===== END $relativePath =====")
 }
 

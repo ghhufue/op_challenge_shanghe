@@ -16,10 +16,23 @@ FRAGMENTS = (
     "host/input_validation.h",
     "host/fused_tiling.h",
     "tiling/tiling_policy.h",
-    "kernels/reference.asc",
-    "kernels/auto_matmul_fused_split_n.asc",
-    "kernels/auto_matmul_fused.asc",
-    "kernels/kernel_dispatch.asc",
+    "kernels/reference/kernel.asc",
+    "kernels/matmul_api/split_n_reduce.asc",
+    "kernels/matmul_api/class_header.inc",
+    "kernels/matmul_api/init.inc",
+    "kernels/matmul_api/process.inc",
+    "kernels/matmul_api/row_max.inc",
+    "kernels/matmul_api/synchronous_tiles.inc",
+    "kernels/matmul_api/asynchronous_tiles.inc",
+    "kernels/matmul_api/tile_reduction.inc",
+    "kernels/matmul_api/lane_sum.inc",
+    "kernels/matmul_api/partial_max_and_state.inc",
+    "kernels/matmul_api/launch.inc",
+    "kernels/dispatch/resources.inc",
+    "kernels/dispatch/reference_plan.inc",
+    "kernels/dispatch/auto_plan.inc",
+    "kernels/dispatch/split_n_plan.inc",
+    "kernels/dispatch/execute_plan.inc",
     "kernel.asc",
 )
 
@@ -64,7 +77,7 @@ def bundle(project_root: Path, output_path: Path) -> None:
                     re.match(r'^\s*#include\s+"submission_policy\.h"\s*$', line)):
                 body.append('#include "submission_policy.h"')
                 continue
-            if (relative_path == "kernels/auto_matmul_fused.asc" and
+            if (relative_path == "kernels/matmul_api/class_header.inc" and
                     re.match(r'^\s*#include\s+"lib/matmul_intf\.h"\s*$', line)):
                 body.append('#include "lib/matmul_intf.h"')
                 continue
@@ -72,7 +85,9 @@ def bundle(project_root: Path, output_path: Path) -> None:
                 continue
             body.append(line)
 
-        fragment_body = "\n".join(body).strip()
+        # Some .inc fragments begin inside an open class definition. Preserve
+        # their indentation while trimming separator-only newlines.
+        fragment_body = "\n".join(body).strip("\n")
         sections.append(
             f"// ===== BEGIN {relative_path} =====\n"
             f"{fragment_body}\n"

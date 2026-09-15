@@ -7,6 +7,13 @@ import unittest
 OP_ROOT = Path(__file__).resolve().parents[1]
 
 
+def read_kernel_fragments(directory: str) -> str:
+    return "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((OP_ROOT / "kernels" / directory).glob("*.inc"))
+    )
+
+
 class AutoFusedSourceTests(unittest.TestCase):
     def test_old_bm_and_bmn_kernel_files_are_removed(self):
         for name in ("bm.asc", "bmn.asc", "mixed.asc"):
@@ -14,11 +21,10 @@ class AutoFusedSourceTests(unittest.TestCase):
         self.assertFalse((OP_ROOT / "host" / "bm_tiling.h").exists())
 
     def test_auto_kernel_uses_official_high_level_api(self):
-        source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
-            encoding="utf-8",
-        )
+        source = read_kernel_fragments("matmul_api")
         for token in (
             "__mix__(1, 2)",
+            "KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2)",
             "matmul::Matmul<",
             "TPosition::VECIN",
             "REGIST_MATMUL_OBJ",
@@ -66,9 +72,7 @@ class AutoFusedSourceTests(unittest.TestCase):
             self.assertIn(token, source)
 
     def test_vector_reduction_uses_the_compact_runtime_tile_width(self):
-        source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
-            encoding="utf-8",
-        )
+        source = read_kernel_fragments("matmul_api")
         self.assertIn("cubeTiling.baseN", source)
         self.assertIn("nTile * baseN", source)
         self.assertIn("actualN / FloatBlockElements", source)
@@ -77,9 +81,7 @@ class AutoFusedSourceTests(unittest.TestCase):
         self.assertNotIn("baseN / 8", source)
 
     def test_dispatch_keeps_workspace_cached_and_asynchronous(self):
-        source = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
-            encoding="utf-8",
-        )
+        source = read_kernel_fragments("dispatch")
         for token in (
             "aclrtStream stream;",
             "TilingKey tilingKey;",
@@ -100,15 +102,11 @@ class AutoFusedSourceTests(unittest.TestCase):
         self.assertNotIn("LaunchReduceAutoFusedPartialScores", source)
 
     def test_auto_path_finalizes_split_n_inside_the_mixed_kernel(self):
-        source = (OP_ROOT / "kernels" / "auto_matmul_fused.asc").read_text(
-            encoding="utf-8",
-        )
+        source = read_kernel_fragments("matmul_api")
         split_source = (
-            OP_ROOT / "kernels" / "auto_matmul_fused_split_n.asc"
+            OP_ROOT / "kernels" / "matmul_api" / "split_n_reduce.asc"
         ).read_text(encoding="utf-8")
-        dispatch = (OP_ROOT / "kernels" / "kernel_dispatch.asc").read_text(
-            encoding="utf-8",
-        )
+        dispatch = read_kernel_fragments("dispatch")
         self.assertEqual(source.count("<<<"), 2)
         self.assertEqual(source.count("AtomicAddBatchSums("), 1)
         self.assertIn("localSums.GetValue(batchIndex) + laneSum", source)
@@ -177,12 +175,14 @@ class AutoFusedSourceTests(unittest.TestCase):
         bundler = (OP_ROOT / "scripts" / "bundle_submission.py").read_text(
             encoding="utf-8",
         )
+        self.assertIn("auto_matmul_fused.asc", entry)
         for source in (entry, bundler):
-            self.assertIn("auto_matmul_fused.asc", source)
             self.assertNotIn("final_reduce.asc", source)
             self.assertNotIn('"kernels/bmn.asc"', source)
             self.assertNotIn('"kernels/mixed.asc"', source)
-        self.assertIn("auto_matmul_fused_split_n.asc", bundler)
+        self.assertIn("matmul_api/split_n_reduce.asc", bundler)
+        self.assertIn("matmul_api/launch.inc", bundler)
+        self.assertIn("dispatch/execute_plan.inc", bundler)
 
     def test_submission_policy_routes_large_and_underfilled_work(self):
         source = (OP_ROOT / "tiling" / "submission_policy.h").read_text(
