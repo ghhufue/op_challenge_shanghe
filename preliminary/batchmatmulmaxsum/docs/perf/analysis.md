@@ -1,4 +1,111 @@
-# BatchMatmulMaxSum correctness fix and performance analysis
+# BatchMatmulMaxSum performance status and history
+
+当前可复现的完整测评命令见 [benchmark_workflow.md](benchmark_workflow.md)。本节首先维护最新代码的性能状态，后续章节保留 2026-09-14 的历史优化记录。
+
+## Current status: commit `7caae52`
+
+Measurement date: 2026-09-16
+
+Platform: Ascend 910, CANN 9.0.0, `dav-2201`, 20 Cube cores
+
+Test state: `main` and `origin/main` both pointed to `7caae52`; the device was healthy and had no competing NPU process. The executable was rebuilt from this commit in a fresh `build_perf_latest` directory. Tracked source files were not modified during measurement.
+
+### Validation scope
+
+| Check | Result |
+|---|---:|
+| Python source/unit tests | 22/22 |
+| Representative hardware matrix: 6 base cases x 2 dtypes x 4 layouts | 48/48 |
+| Candidate-key comparison rows | 7/7 |
+| Same-machine previous-commit comparison | 3/3 |
+
+All repeated outputs remained within tolerance. The `c21_square` atomic accumulation path was not bitwise identical across every repeat, but its maximum repeat-to-repeat absolute difference was only `3.81469727e-6`.
+
+### Stable host-side latency
+
+The table uses FP16 and non-transposed storage. `c20`, `c21`, and `t03` are p50/p95 values from 10 warm-ups plus 200 measured launch-and-synchronize calls. The remaining representative rows use 100 measured calls.
+
+| Case | Shape `(B,M,N,K)` | Default key | Blocks / split-N | p50 | p95 |
+|---|---|---:|---:|---:|---:|
+| `s00_dot` | `(1,1,1,32)` | 0 | 1 / 1 | 78.023 us | 92.593 us |
+| `c16_tail63` | `(2,63,65,128)` | 121 | 2 / 1 | 90.683 us | 98.393 us |
+| `c20_rect_n` | `(1,33,513,256)` | 121 | 1 / 1 | 97.934 us | 106.844 us |
+| `c21_square` | `(4,128,128,128)` | 121 | 8 / 1 | 87.714 us | 95.424 us |
+| `c22_large_k` | `(1,17,19,8192)` | 121 | 1 / 1 | 178.927 us | 195.088 us |
+| `t03_max_nk` | `(1,1,8192,8192)` | 130 | 20 / 20 | 460.787 us | 501.359 us |
+
+These are absolute custom-kernel timings and internal candidate comparisons. The official separated `BatchMatMul + ReduceMax + ReduceSum` benchmark was not run in this round, so these results must not be presented as an official competition speedup or score.
+
+### Candidate effectiveness
+
+| Case | Baseline | Candidate | p50 change | Speedup | Conclusion |
+|---|---:|---:|---:|---:|---|
+| `c21_square_float16_00` | key 100: 95.583 us | key 121: 87.714 us | -7.869 us | 1.090x | Async double buffering is beneficial. |
+| `c20_rect_n_float16_00` | key 100: 126.234 us | key 121: 97.934 us | -28.300 us | 1.289x | Async execution hides a substantial part of the single-core pipeline. |
+| `c20_rect_n_float16_00` | key 121: 97.934 us | key 130: 144.846 us | +46.912 us | 0.676x | Split-N is not amortized below the current threshold. |
+| `t03_max_nk_float16_00` | key 121: 1731.443 us | key 130: 460.787 us | -1270.656 us | 3.757x | 20-way split-N is essential at maximum N/K. |
+
+The submission thresholds choose the correct strategy for these three representative regions.
+
+### Current `msprof` results
+
+The following rounds were captured from commit `7caae52` with the standard `ops-profiling` flow: 3 warm-ups, seven `aic-metrics` groups, and one sample-based per-core collection.
+
+| Round | Shape / key | Task Duration | Dominant AIC pipes | Cube utilization | Core imbalance | Strict bound |
+|---|---|---:|---|---:|---:|---|
+| [round_008](round_008/summary.txt) | `(4,128,128,128)`, key 121 | 16.100 us | Scalar 79.9%, FIXP 26.8%, MTE2 24.5% | 35.99% | 16.08% | No strict bound; borderline Scalar |
+| [round_009](round_009/summary.txt) | `(1,33,513,256)`, key 121 | 34.260 us | Scalar 93.8%, MTE2 75.6%, FIXP 74.3% | 4.94% | n/a, one core | **Scalar Bound** |
+| [round_010](round_010/summary.txt) | `(1,1,8192,8192)`, key 130 | 452.940 us | MTE2 66.1%, Scalar 53.6%, FIXP 4.4% | 99.08% | 0.97% | No strict bound |
+
+Interpretation:
+
+1. `c21_square`: the kernel itself is only 16.1 us while host p50 is 87.7 us. Launch and synchronization overhead dominate end-to-end latency. Eight blocks on a 20-core device explain the approximately 36% global Cube utilization. Per-core imbalance remains above the 10% warning threshold.
+2. `c20_rect_n`: only one Cube block is launched, so global utilization is 4.94%. AIC Scalar busy reaches 93.8%, satisfying the strict Scalar Bound rule. The next material gain needs more useful inter-core work or less scalar control, not GM bandwidth tuning alone.
+3. `t03_max_nk`: split-N fills all 20 Cube cores and balances them well. Kernel Task Duration accounts for almost all host p50. However, MAC busy is only 3.6% and reported Cube FLOPs are about 4.64G versus roughly 0.134G useful mathematical FLOPs. Fixed 32-row per-lane work for `M=1` causes substantial padded computation, so 99% global Cube utilization does not mean high useful-compute efficiency.
+
+No AIV vector bank, bank-group, or resource conflict was reported in these three rounds.
+
+### Layout sensitivity
+
+The current submission policy ignores `transposeX1` and `transposeX2` when selecting a key. The measured FP16 p50 values show that the same policy and tile shape do not perform uniformly across layouts:
+
+| Case | TX1/TX2 `00` | `01` | `10` | `11` |
+|---|---:|---:|---:|---:|
+| `c22_large_k` | 178.927 us | 91.223 us | 262.329 us | 181.246 us |
+| `t03_max_nk` | 493.949 us | 275.380 us | 4997.235 us | 4099.421 us |
+
+`TX1=true` is the largest current performance risk for maximum-K workloads. For `t03_max_nk`, the slowest layout is about 18.1x slower than the fastest layout even though both select key 130. Layout-aware policy or tiling is therefore a higher-priority investigation than small changes to the already well-balanced non-transposed split-N path.
+
+### Same-machine regression check
+
+Commit `5e38cba` was independently archived to `/tmp`, rebuilt with the same CANN toolchain, and measured in the same session with 10 warm-ups and 200 repeats.
+
+| Case | Previous `5e38cba` p50 | Current `7caae52` p50 | Relative change |
+|---|---:|---:|---:|
+| `c20_rect_n_float16_00` | 97.813 us | 97.934 us | +0.12% |
+| `c21_square_float16_00` | 88.923 us | 87.714 us | -1.36% |
+| `t03_max_nk_float16_00` | 463.526 us | 460.787 us | -0.59% |
+
+All changes are within normal run-to-run variation. The source-layout refactor in `7caae52` introduces no observable performance regression. The new `c21_square` Task Duration is also exactly 16.100 us, matching the archived pre-refactor measurement.
+
+### Current priorities
+
+1. Treat the `TX1=true`, large-K layout path as the highest performance risk.
+2. Improve useful parallelism for small-M, medium-N work such as `c20_rect_n`; it is both under-occupied and Scalar Bound.
+3. Investigate a smaller M tile for very small M to reduce padded Cube work, while preserving the good 20-core balance of key 130.
+4. Avoid prioritizing further kernel-only optimization for tiny and ordinary short kernels until the roughly 60-70 us host launch/sync floor is accounted for in the target scoring path.
+5. Add the official separated-operator baseline before claiming competition acceleration ratios.
+
+## Revision history
+
+| Date | Commit | Change |
+|---|---|---|
+| 2026-09-16 | `7caae52` | Added the current 48-case hardware sample, candidate comparisons, rounds 008-010, layout sensitivity, and same-machine regression result. |
+| 2026-09-14 | `5e38cba` and earlier | Recorded correctness fixes, async pipeline development, and historical split-N measurements below. |
+
+---
+
+## Historical analysis: 2026-09-14
 
 Date: 2026-09-14
 
@@ -135,8 +242,8 @@ The measured implementation raised global Cube utilization from 4.95% to
 22.34%, but its first stage still took almost as long as the single-core kernel
 and its separate 5.680 us finalizer raised total device time to 40.320 us. These
 numbers are retained as historical evidence. The current implementation runs
-both stages in one MIX-kernel launch with an AIV software barrier and requires a
-new profiling round before its latency is compared with this table.
+both stages in one MIX-kernel launch with an AIV software barrier. Its current
+maximum-N/K behavior is recorded in `round_010` and the current-status section.
 
 Raw summaries:
 

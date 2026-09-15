@@ -1,0 +1,62 @@
+=== 上板性能统计摘要 (msprof) ===
+Op: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj64ELj128ELj64ELb1EEEvPhS1_S1_S1_S1_mS1_S1_jN7AscendC6tiling11TCubeTilingENS_5ShapeEj
+Type: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj64ELj128ELj64ELb1EEEvPhS1_S1_S1_S1_mS1_S1_jN7AscendC6tiling11TCubeTilingENS_5ShapeEj | TaskType: MIX_AIC | Duration: 452.94us | BlockDim: 20 (mix=40)
+
+[注] msprof 的 op_summary 是 per-op 聚合值（不含逐核 min/avg/max）；
+     如需逐核数据请改用 msprof op (需要 msopprof 二进制)。
+
+--- Pipe ratios (主导核 = aic) ---
+  aicore_time: 448.750us | aiv_time: 449.333us
+  aic: mac=  3.60% | mte1=  9.40% | mte2= 66.10% | fixpipe=  4.40% | scalar= 53.60% | icache_miss=  0.30%
+  aiv: scalar= 22.90% | mte2= 27.90% | mte3= 31.40% | icache_miss=  0.40%
+  cube_utilization: 99.08%
+
+--- 头开销 ---
+  Task Duration: 452.94us | 核最长耗时: 449.333us | 头开销: 3.607us (0.8%)
+
+--- Memory 带宽 (aic-metrics=Memory) ---
+  aic main_mem read: 1.14 GB/s
+  aic main_mem write: 0.00 GB/s
+  aiv main_mem read: 0.01 GB/s
+  aiv main_mem write: 0.00 GB/s
+  aic L1 read: 32.53 GB/s
+  aic L1 write: 7.54 GB/s
+  aiv UB read: 0.05 GB/s
+  aiv UB write: 0.58 GB/s
+
+--- MemoryL0 ---
+  L0A read: 3.75 GB/s
+  L0A write: 4.28 GB/s
+  L0B read: 13.71 GB/s
+  L0B write: 27.41 GB/s
+  L0C read (cube): 3.37 GB/s
+  L0C write (cube): 3.43 GB/s
+
+--- MemoryUB ---
+  UB read (scalar): 0.20 GB/s
+  UB write (scalar): 0.01 GB/s
+
+--- ArithmeticUtilization ---
+  mac_fp16=  3.90% | cube_fops=4637679616
+
+--- 逐核负载均衡 (sample-based aicore.db) ---
+  有效核数: 20  | 主频推算: 1.702 GHz (0.5874 ns/cycle)
+  min=444.408us  avg=445.860us  max=448.750us
+  (max-min)/max = 0.97%  ->  达标 (<10%)
+  Top-3 慢核: Core2=448.75us, Core12=448.49us, Core21=447.43us
+  Top-3 快核: Core19=444.41us, Core16=444.46us, Core4=444.50us
+
+--- 原始数据位置 ---
+  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/round_010/
+  原始 PROF: /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/
+  按 aic-metrics 拆分的 op_summary_<Metric>.csv 均已复制到归档目录，
+  如需逐列查看可直接 Read。
+
+--- Metric 来源 ---
+  PipeUtilization        <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_PipeUtilization/PROF_000001_20260916022756006_00040988BQNHRODC/mindstudio_profiler_output/op_summary_20260916022801.csv
+  ArithmeticUtilization  <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_ArithmeticUtilization/PROF_000001_20260916022803041_00041275ANQNPDBJ/mindstudio_profiler_output/op_summary_20260916022808.csv
+  Memory                 <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_Memory/PROF_000001_20260916022810077_00041551JENGQGGM/mindstudio_profiler_output/op_summary_20260916022814.csv
+  MemoryL0               <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_MemoryL0/PROF_000001_20260916022816110_00041839RBORBCQM/mindstudio_profiler_output/op_summary_20260916022820.csv
+  MemoryUB               <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_MemoryUB/PROF_000001_20260916022822144_00042137DELLQGHI/mindstudio_profiler_output/op_summary_20260916022826.csv
+  L2Cache                <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_L2Cache/PROF_000001_20260916022828176_00042416NLNQOBIK/mindstudio_profiler_output/op_summary_20260916022832.csv
+  ResourceConflictRatio  <- /tmp/bmms_latest_t03/PROF_GROUP_20260916_022746/PROF_ResourceConflictRatio/PROF_000001_20260916022834212_00042691KCKOFECB/mindstudio_profiler_output/op_summary_20260916022838.csv

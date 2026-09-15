@@ -1,0 +1,2 @@
+Device_id,OP Type,Core Type,Count,Total Time(us),Min Time(us),Avg Time(us),Max Time(us),Ratio(%)
+0,_ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj64ELj128ELj64ELb0EEEvPhS1_S1_S1_S1_mS1_S1_jN7AscendC6tiling11TCubeTilingENS_5ShapeEj,MIX_AIC,1,16.48,16.48,16.48,16.48,100
