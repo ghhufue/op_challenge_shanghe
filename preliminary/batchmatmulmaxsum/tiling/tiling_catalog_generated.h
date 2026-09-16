@@ -11,6 +11,7 @@ enum class TilingKey : uint32_t {
     AUTO_MATMUL_FUSED_VECTOR = 110,
     AUTO_MATMUL_FUSED_ASYNC = 120,
     AUTO_MATMUL_FUSED_ASYNC_DB = 121,
+    AUTO_MATMUL_FUSED_ASYNC_DB_M32 = 122,
     AUTO_MATMUL_FUSED_SPLIT_N = 130,
 };
 
@@ -40,6 +41,7 @@ constexpr StaticTilingConfig kTilingConfigs[] = {
     {TilingKey::AUTO_MATMUL_FUSED_VECTOR, "auto_matmul_fused_vector", KernelPath::AUTO_FUSED, MatmulSchedule::SYNC, ReductionMode::VECTOR, 1, true, 64, 128, 64, 32, 128, 1},
     {TilingKey::AUTO_MATMUL_FUSED_ASYNC, "auto_matmul_fused_async", KernelPath::AUTO_FUSED, MatmulSchedule::ASYNC, ReductionMode::VECTOR, 1, true, 64, 128, 64, 32, 128, 1},
     {TilingKey::AUTO_MATMUL_FUSED_ASYNC_DB, "auto_matmul_fused_async_db", KernelPath::AUTO_FUSED, MatmulSchedule::ASYNC, ReductionMode::VECTOR, 2, true, 64, 128, 64, 32, 128, 1},
+    {TilingKey::AUTO_MATMUL_FUSED_ASYNC_DB_M32, "auto_matmul_fused_async_db_m32", KernelPath::AUTO_FUSED, MatmulSchedule::ASYNC, ReductionMode::VECTOR, 2, true, 32, 128, 64, 16, 128, 1},
     {TilingKey::AUTO_MATMUL_FUSED_SPLIT_N, "auto_matmul_fused_split_n", KernelPath::AUTO_FUSED, MatmulSchedule::ASYNC, ReductionMode::VECTOR, 2, true, 64, 128, 64, 32, 128, 2},
 };
 

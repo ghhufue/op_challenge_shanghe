@@ -29,6 +29,13 @@ inline void ExecutePlan(
                         plan, x1, x2, y, inputDtype, stream,
                         transposeX1, transposeX2);
                     return;
+#ifdef BMMS_ENABLE_TUNING
+                case TilingKey::AUTO_MATMUL_FUSED_ASYNC_DB_M32:
+                    ExecuteAutoFusedPlan<true, true, 2, 32, 128, 64>(
+                        plan, x1, x2, y, inputDtype, stream,
+                        transposeX1, transposeX2);
+                    return;
+#endif
                 case TilingKey::AUTO_MATMUL_FUSED_SPLIT_N:
                     if (plan.tiling.splitN > 1) {
                         ExecuteAutoFusedSplitNPlan<64, 128, 64>(

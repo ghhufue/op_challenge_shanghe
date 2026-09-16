@@ -2,7 +2,66 @@
 
 性能数据按 [README.md](README.md) 规定的实现版本归档。当前版本由 [CURRENT_VERSION](CURRENT_VERSION) 指向；完整测评命令见 [benchmark_workflow.md](benchmark_workflow.md)。本节只把当前版本作为有效现状，后续章节保留的早期数据均视为历史参考。
 
-## Current status: performance version [v001](versions/v001/manifest.md)
+## Current status: performance version [v002](versions/v002/manifest.md)
+
+Version status: `MEASURED` (scoped c20 experiment)
+
+The current worktree adds tuning-only key 122 (`TileM=32`) for the c20
+small-M experiment. The submission policy remains on key 121 for this shape.
+
+### c20 TileM=64 versus TileM=32
+
+Both candidates use FP16 layout `00`, async Matmul, vector reduction, two C
+buffers, `TileN=128`, and `TileK=64`. Four interleaved host-side rounds used
+10 warm-ups and 200 measured launch-and-synchronize calls per candidate.
+
+| Metric | key 121, TileM=64 | key 122, TileM=32 | Interpretation |
+|---|---:|---:|---|
+| M groups / launch blocks | 1 / 1 | 2 / 2 | M32 doubles the active AIC count |
+| p50 range | 98.501-99.571 us | 97.251-98.101 us | M32 is only 0.4%-2.1% lower |
+| Median-of-round p50 | 99.366 us | 97.871 us | 1.015x apparent speedup |
+| Median-of-round p95 | 111.885 us | 113.101 us | M32 p95 is 1.1% worse |
+| Repeat tolerance | passed | passed | Both numerically stable |
+
+The device-level measurements explain why the small p50 change is not a
+robust kernel optimization:
+
+| Metric | [key 121](versions/v002/round_001/summary.txt) | [key 122](versions/v002/round_002/summary.txt) | Change |
+|---|---:|---:|---:|
+| Task Duration | 35.320 us | 35.860 us | M32 **1.5% slower** |
+| Longest AIC time | 34.917 us | 30.490 us | M32 12.7% shorter |
+| Task head overhead | 0.403 us | 5.370 us | +4.967 us |
+| Cube utilization | 4.94% | 8.50% | 1.72x |
+| Core imbalance | n/a, one core | 25.49% | warning |
+| AIC Scalar busy | 93.9% | 92.3% | both Scalar Bound |
+| AIC MTE2 busy | 69.5% | 71.1% | not a GM-bandwidth bound |
+| AIC GM read | 1.57 GB/s | 1.33 GB/s | bandwidth remains low |
+
+`TileM=32` creates fixed M groups of 32 and 1 rows rather than balanced 17/16
+work. The second core therefore does not receive a comparable task. Although
+the longest core finishes sooner, core imbalance and multi-block task overhead
+increase total kernel duration. Key 122 must not replace key 121.
+
+`TileM=16` was rejected before code generation: the MIX kernel has two AIV
+lanes per AIC, so it would produce `RowsPerLane=8`, below the FP16/BF16 Cube
+`baseM` minimum of 16. The minimum legal TileM in the current design is 32.
+
+### Four-step optimization interpretation
+
+1. Tiling model: the legal isolated search was TileM `{32,64}` with all other
+   parameters fixed. The detailed constraints are in
+   [parameters](versions/v002/参数空间分析.md).
+2. Inter-card pipeline: skipped; this is a single-card compute operator.
+3. Inter-core pipeline: key 122 has independent M tasks and no split-N
+   barrier, but its 32/1 task division is intrinsically imbalanced.
+4. Single-core pipeline: both variants remain strictly Scalar Bound; changing
+   TileM alone does not remove Matmul API scalar control.
+
+The next useful experiments are a balanced M-task mapping or a capped two-way
+split-N candidate, followed by Matmul API scalar-control reduction. Simply
+lowering the existing five-way split-N threshold is still unsupported.
+
+## Previous measured baseline: performance version [v001](versions/v001/manifest.md)
 
 Core implementation commit: `7caae52`
 

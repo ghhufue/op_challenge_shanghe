@@ -1,0 +1,64 @@
+=== 上板性能统计摘要 (msprof) ===
+Op: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj32ELj128ELj64ELb0EEEvPhS1_S1_S1_S1_mS1_S1_jN7AscendC6tiling11TCubeTilingENS_5ShapeEj
+Type: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj32ELj128ELj64ELb0EEEvPhS1_S1_S1_S1_mS1_S1_jN7AscendC6tiling11TCubeTilingENS_5ShapeEj | TaskType: MIX_AIC | Duration: 35.86us | BlockDim: 2 (mix=4)
+
+[注] msprof 的 op_summary 是 per-op 聚合值（不含逐核 min/avg/max）；
+     如需逐核数据请改用 msprof op (需要 msopprof 二进制)。
+
+--- Pipe ratios (主导核 = aic) ---
+  aicore_time: 30.490us | aiv_time: 23.215us
+  aic: mac=  3.00% | mte1=  8.40% | mte2= 71.10% | fixpipe= 69.70% | scalar= 92.30% | icache_miss=  3.80%
+  aiv: vec=  2.30% | scalar= 21.30% | mte2=  5.20% | mte3=  1.80% | icache_miss=  8.80%
+  cube_utilization: 8.50%
+
+--- 头开销 ---
+  Task Duration: 35.86us | 核最长耗时: 30.490us | 头开销: 5.370us (15.0%)
+
+--- Memory 带宽 (aic-metrics=Memory) ---
+  aic main_mem read: 1.33 GB/s
+  aic main_mem write: 0.04 GB/s
+  aiv main_mem read: 0.05 GB/s
+  aiv main_mem write: 0.00 GB/s
+  aic L1 read: 34.27 GB/s
+  aic L1 write: 6.95 GB/s
+  aiv UB read: 0.41 GB/s
+  aiv UB write: 1.84 GB/s
+
+--- MemoryL0 ---
+  L0A read: 3.40 GB/s
+  L0A write: 3.78 GB/s
+  L0B read: 12.49 GB/s
+  L0B write: 24.97 GB/s
+  L0C read (cube): 1.56 GB/s
+  L0C write (cube): 3.12 GB/s
+
+--- MemoryUB ---
+  UB read (vector): 0.10 GB/s
+  UB write (vector): 0.10 GB/s
+  UB read (scalar): 0.02 GB/s
+  UB write (scalar): 0.03 GB/s
+
+--- ArithmeticUtilization ---
+  mac_fp16=  3.00% | cube_fops=24125440
+
+--- 逐核负载均衡 (sample-based aicore.db) ---
+  有效核数: 2  | 主频推算: 1.888 GHz (0.5296 ns/cycle)
+  min=22.718us  avg=26.604us  max=30.490us
+  (max-min)/max = 25.49%  ->  警告 (10~30%)
+  Top-3 慢核: Core24=30.49us, Core1=22.72us
+  Top-3 快核: Core1=22.72us, Core24=30.49us
+
+--- 原始数据位置 ---
+  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/versions/v002/round_002/
+  原始 PROF: /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/
+  按 aic-metrics 拆分的 op_summary_<Metric>.csv 均已复制到归档目录，
+  如需逐列查看可直接 Read。
+
+--- Metric 来源 ---
+  PipeUtilization        <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_PipeUtilization/PROF_000001_20260916232935684_00017045JOHPRRNN/mindstudio_profiler_output/op_summary_20260916232939.csv
+  ArithmeticUtilization  <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_ArithmeticUtilization/PROF_000001_20260916232941718_00017324ADBHANJH/mindstudio_profiler_output/op_summary_20260916232945.csv
+  Memory                 <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_Memory/PROF_000001_20260916232947751_00017612CNPKNRNB/mindstudio_profiler_output/op_summary_20260916232951.csv
+  MemoryL0               <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_MemoryL0/PROF_000001_20260916232953783_00017911GLOJOMFE/mindstudio_profiler_output/op_summary_20260916232958.csv
+  MemoryUB               <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_MemoryUB/PROF_000001_20260916232959819_00018191AODIKQDN/mindstudio_profiler_output/op_summary_20260916233004.csv
+  L2Cache                <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_L2Cache/PROF_000001_20260916233005851_00018470ARLLODOK/mindstudio_profiler_output/op_summary_20260916233011.csv
+  ResourceConflictRatio  <- /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/v002/prof_raw/c20_key122/PROF_GROUP_20260916_232929/PROF_ResourceConflictRatio/PROF_000001_20260916233012887_00018761KPKBFGRA/mindstudio_profiler_output/op_summary_20260916233018.csv

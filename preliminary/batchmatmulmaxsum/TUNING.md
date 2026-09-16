@@ -11,6 +11,9 @@ three ordered single-core experiments:
   one VECIN UB slot;
 - key `121`, `AUTO_MATMUL_FUSED_ASYNC_DB`: key 120 plus two VECIN UB slots and
   a prologue/steady-state/epilogue drain.
+- key `122`, `AUTO_MATMUL_FUSED_ASYNC_DB_M32`: tuning-only key 121 variant
+  with `tile_m=32` and 16 rows per AIV lane. It tests whether a second M task
+  improves small-M under-occupancy without paying split-N synchronization.
 - key `130`, `AUTO_MATMUL_FUSED_SPLIT_N`: dynamically partitions N to fill
   otherwise idle AIC cores. One MIX kernel first stores padded per-row partial
   maxima, synchronizes all of its AIV subblocks with a dedicated software

@@ -4,7 +4,7 @@
 
 ## 当前版本
 
-- 当前性能版本：[v001](versions/v001/manifest.md)
+- 当前性能版本：[v002](versions/v002/manifest.md)
 - 机器可读指针：[CURRENT_VERSION](CURRENT_VERSION)
 - 当前结论：[analysis.md](analysis.md)
 - 完整测评命令：[benchmark_workflow.md](benchmark_workflow.md)

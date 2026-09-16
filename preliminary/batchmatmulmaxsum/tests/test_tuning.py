@@ -20,16 +20,18 @@ class CatalogTests(unittest.TestCase):
         configs = load_catalog()
         implemented = [item for item in configs if item.implemented]
         self.assertEqual([item.key for item in implemented],
-                         [0, 100, 110, 120, 121, 130])
+                         [0, 100, 110, 120, 121, 122, 130])
         self.assertEqual([item.path for item in implemented],
                          ["reference", "auto_fused", "auto_fused",
-                          "auto_fused", "auto_fused", "auto_fused"])
+                          "auto_fused", "auto_fused", "auto_fused",
+                          "auto_fused"])
         self.assertEqual(implemented[1].name, "auto_matmul_fused")
         self.assertEqual(
             [(item.schedule, item.reduction, item.ub_input_buffers)
              for item in implemented[1:]],
             [("sync", "scalar", 1), ("sync", "vector", 1),
              ("async", "vector", 1), ("async", "vector", 2),
+             ("async", "vector", 2),
              ("async", "vector", 2)],
         )
         self.assertTrue(all(item.split_n == 1 for item in implemented[:-1]))
@@ -92,6 +94,21 @@ class EnumerationTests(unittest.TestCase):
         self.assertEqual(by_key[121].workspace_bytes, 594432)
         self.assertGreater(by_key[121].memory.ub_used,
                            by_key[120].memory.ub_used)
+
+    def test_m32_candidate_creates_two_c20_m_tasks(self):
+        hardware = Hardware(aic=20, aiv=40,
+                            system_workspace_bytes=4096)
+        plans = enumerate_plans(
+            Problem(1, 33, 513, 256), hardware, implemented_only=True,
+        )
+        by_key = {plan.config.key: plan for plan in plans}
+        baseline = by_key[121]
+        m32 = by_key[122]
+        self.assertEqual((baseline.task_count, baseline.launch_blocks), (1, 1))
+        self.assertEqual((m32.task_count, m32.launch_blocks), (2, 2))
+        self.assertEqual(m32.config.tile_m, 32)
+        self.assertEqual(m32.config.vec_m, 16)
+        self.assertEqual(m32.workspace_bytes, baseline.workspace_bytes)
 
     def test_split_n_fills_idle_aic_and_reserves_partial_maxima(self):
         hardware = Hardware(aic=20, aiv=40,
