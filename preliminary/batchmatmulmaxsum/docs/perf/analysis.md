@@ -4,7 +4,7 @@
 
 ## Current status: performance version [v003](versions/v003/manifest.md)
 
-Version status: `MEASURED` (scoped c20 msOpProf visualization round)
+Version status: `MEASURED` (scoped c20 and t03 msOpProf visualization rounds)
 
 The current worktree specializes the compile-time Matmul configuration for
 the API surface used by this operator. Bias, QuantVector, and SelfDefineData
@@ -26,10 +26,19 @@ The AIC detail payload reports 32.739 us, Scalar 88.91%, MTE2 66.79%, FIXP
 single-Cube-core path; the specialized configuration has not demonstrated an
 end-to-end improvement.
 
+The large t03 path is archived as
+[round_002](versions/v003/round_002/summary.txt). It uses key 130 with 20-way
+split-N and reports Task Duration 445.729 us. The 20 AIC times range from
+435.092 to 439.070 us, corresponding to 0.91% imbalance. Averaged across the
+AIC blocks, the pipe ratios are Scalar 52.80%, MTE2 66.26%, FIXP 4.32%, and
+Cube/MAC active 3.34%. This confirms that split-N fills and balances the card,
+while useful Cube issue remains low; these pipe ratios must not be confused
+with global Cube-core occupancy.
+
 The remaining report tabs are explicit diagnostic pages: the installed CLI
 lacks PipeTimeline and PCSampling, the existing binary has no `.debug_line`,
 no `memory_info.json` exists, and the TimelineDetail collection contained no
-semantically usable instruction events. This scoped round does not replace a
+semantically usable instruction events. These scoped rounds do not replace a
 future standard seven-group regression comparison.
 
 ## Previous scoped experiment: performance version [v002](versions/v002/manifest.md)

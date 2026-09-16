@@ -1,0 +1,74 @@
+=== v003 round_002: t03 large-case msOpProf visualization ===
+
+Implementation:
+  Core implementation commit: 97d36dd
+  Core diff SHA-256: b37c9878f24103a2907aaf62d7694c7289cdbb6e99e48ac32cc756da06f003d2
+  Performance version: v003
+
+Environment:
+  Device: Ascend 910
+  CANN: 9.0.0
+  ASC architecture: dav-2201
+  Device state: healthy, no competing NPU process
+  Rebuild during collection: no
+
+Case:
+  Shape (B,M,N,K): (1,1,8192,8192)
+  Dtype/layout: FP16, TX1=false, TX2=false
+  Tiling key: 130 (TileM=64, TileN=128, TileK=64)
+  Launch blocks / split-N: 20 / 20
+  Application repeats / warmups: 1 / 0
+  Profiler launch count: 1
+
+Collection:
+  BasicInfo: reused successful preflight
+  Occupancy: ok
+  Roofline: ok
+  MemoryDetail: ok
+  Raw Data: aliased from MemoryDetail
+  TimelineDetail,Default: command and artifact validation passed, but the
+    visualizer found no semantically usable instruction timeline events
+  Collection time: 151.888 s
+  Visualization time: 3.639 s
+
+Available report pages with real data:
+  Details:
+    Task Duration: 445.729 us
+    AIC block time min / avg / max: 435.092 / 436.972 / 439.070 us
+    AIC imbalance (max-min)/max: 0.91%
+    Mean AIC pipe ratios: Scalar 52.80%; MTE2 66.26%;
+      FIXP 4.32%; Cube/MAC active 3.34%
+  Roofline: 7 charts, 20 measured points
+  Cache:
+    Mean L2 total hit rate: 77.52% (range 64.52%-88.16%)
+    Mean iCache total hit rate: 100.00%
+  Raw Data: 8 tables
+
+Diagnostic-only report pages:
+  Timeline: installed msprof CLI has no PipeTimeline/pipeTimeLine
+  Source: selected existing binary has no usable .debug_line
+  Warp Stall: installed msprof CLI has no PCSampling/PcSampling
+  On-Chip Memory: no compiler memory_info.json exists
+  Instruction Timeline: TimelineDetail output contained no usable events
+
+Validation:
+  HTML artifact: passed (638,238 bytes)
+  All nine tabs rendered: passed
+  Embedded payload and JavaScript syntax: passed
+  Render performance: 3.644 s, peak RSS 126.8 MiB
+  Overall complete-report self-check: failed as expected because five
+    requested pages have diagnostic content rather than real module data;
+    Playwright browser interaction was unavailable and skipped. The skill
+    source tree also contained Python __pycache__ entries.
+
+Artifacts:
+  msopprof_complete_report.html: self-contained interactive report
+  collection_manifest.json: collection truth source
+  report_payload.json: canonical visualization payload
+  report_index.json: rendered-page receipt
+  validation_result.json: structural and semantic validation results
+
+Scope:
+  This is a visualization-focused scoped round. It is not the standard
+  seven-group regression workflow and must not be used alone to claim an
+  official end-to-end speedup over v002.

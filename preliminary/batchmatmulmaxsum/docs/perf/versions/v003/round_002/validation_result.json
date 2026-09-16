@@ -1,0 +1,132 @@
+{
+  "schema": "msopprof-visualization-validation/v1",
+  "passed": false,
+  "skill": "/home/developer/.cannbot/repo/ops/ops-profiling/msopprof-visualization",
+  "checks": [
+    {
+      "name": "必需文件",
+      "passed": true,
+      "detail": "17 个必需文件齐全"
+    },
+    {
+      "name": "无缓存和编译产物",
+      "passed": false,
+      "detail": "scripts/__pycache__, scripts/__pycache__/visualize_resolvers.cpython-311.pyc, scripts/__pycache__/visualize_common.cpython-311.pyc, scripts/__pycache__/runtime_guard.cpython-311.pyc, scripts/__pycache__/collect_discovery.cpython-311.pyc, scripts/__pycache__/visualize.cpython-311.pyc, scripts/__pycache__/environment_context.cpython-311.pyc, scripts/__pycache__/visualize_render.cpython-311.pyc, scripts/__pycache__/visualize_source.cpython-311.pyc, scripts/__pycache__/collect.cpython-311.pyc, scripts/__pycache__/visualize_parsers.cpython-311.pyc, scripts/__pycache__/collect_validate.cpython-311.pyc"
+    },
+    {
+      "name": "SKILL frontmatter",
+      "passed": true,
+      "detail": "name 与目录一致"
+    },
+    {
+      "name": "Python 语法",
+      "passed": true,
+      "detail": "全部脚本通过 AST 解析"
+    },
+    {
+      "name": "evals.json",
+      "passed": true,
+      "detail": "JSON 有效且包含评测用例"
+    },
+    {
+      "name": "HTML 模板",
+      "passed": true,
+      "detail": "payload 占位符数量=1"
+    },
+    {
+      "name": "模板路径",
+      "passed": true,
+      "detail": "visualize.py 使用 templates/report_template.html"
+    },
+    {
+      "name": "完整特性渲染命令",
+      "passed": true,
+      "detail": "返回码=0"
+    },
+    {
+      "name": "报告产物",
+      "passed": true,
+      "detail": "HTML=638238 bytes"
+    },
+    {
+      "name": "九个页面完整展示",
+      "passed": true,
+      "detail": "details, roofline, timeline, cache, onchip-memory, source, warp-stall, instruction-timeline, raw-data"
+    },
+    {
+      "name": "真实数据模块",
+      "passed": false,
+      "detail": "可用：cache, details, raw-data, roofline"
+    },
+    {
+      "name": "缺失模块诊断页",
+      "passed": true,
+      "detail": "诊断：instruction-timeline, onchip-memory, source, timeline, warp-stall"
+    },
+    {
+      "name": "关键数据非空",
+      "passed": false,
+      "detail": "{\"roofline_points\": 20, \"timeline_events\": 0, \"cache_blocks\": 80, \"source_files\": 0, \"source_instructions\": 0, \"raw_tables\": 8}"
+    },
+    {
+      "name": "HTML 内嵌载荷",
+      "passed": true,
+      "detail": "与 report_payload.json 页面和版本一致"
+    },
+    {
+      "name": "JavaScript 语法",
+      "passed": true,
+      "detail": "JavaScript 语法通过"
+    },
+    {
+      "name": "浏览器交互",
+      "passed": true,
+      "detail": "Playwright 不可用，已跳过浏览器交互检查"
+    },
+    {
+      "name": "性能门禁",
+      "passed": true,
+      "detail": "耗时=3.644s/12.0s，峰值内存=126.8/512 MiB"
+    }
+  ],
+  "errors": [
+    "存在缓存或编译产物",
+    "真实数据模块缺失",
+    "关键模块数据为空"
+  ],
+  "integration": {
+    "elapsed_seconds": 3.6439,
+    "peak_rss_mib": 126.79,
+    "stdout": "{\n  \"report\": \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/msopprof_complete_report.html\",\n  \"payload\": \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/report_payload.json\",\n  \"report_index\": \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/report_index.json\",\n  \"requested_pages\": [\n    \"details\",\n    \"roofline\",\n    \"timeline\",\n    \"cache\",\n    \"onchip-memory\",\n    \"source\",\n    \"warp-stall\",\n    \"instruction-timeline\",\n    \"raw-data\"\n  ],\n  \"rendered_pages\": [\n    \"details\",\n    \"roofline\",\n    \"timeline\",\n    \"cache\",\n    \"onchip-memory\",\n    \"source\",\n    \"warp-stall\",\n    \"instruction-timeline\",\n    \"raw-data\"\n  ],\n  \"omitted_modules\": [],\n  \"input_schema\": \"msopprof-collection/v2\",\n  \"memory_edge_tables\": [\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_0_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_0_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_0_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_1_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_1_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_1_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_2_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_2_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_2_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_3_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_3_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_3_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_4_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_4_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_4_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_5_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_5_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_5_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_6_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_6_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_6_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_7_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_7_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_7_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_8_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_8_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_8_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_9_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_9_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_9_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_10_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_10_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_10_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_11_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_11_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_11_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_12_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_12_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_12_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_13_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_13_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_13_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_14_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_14_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_14_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_15_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_15_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_15_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_16_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_16_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_16_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_17_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_17_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_17_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_18_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_18_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_18_requests.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_19_edges.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_19_bandwidth.csv\",\n    \"/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/_debug/memory_edges/block_19_requests.csv\"\n  ],\n  \"source_debug_tables\": [],\n  \"timing\": {\n    \"schema\": \"msopprof-visualization-timing/v1\",\n    \"renderer_version\": \"4.8.0\",\n    \"wall_seconds\": 3.544385,\n    \"phases\": [\n      {\n        \"phase\": \"load_collection\",\n        \"elapsed_seconds\": 0.005048\n      },\n      {\n        \"phase\": \"parse_and_build_payload\",\n        \"elapsed_seconds\": 3.519602\n      },\n      {\n        \"phase\": \"export_debug_tables\",\n        \"elapsed_seconds\": 0.00795\n      },\n      {\n        \"phase\": \"compact_payload\",\n        \"elapsed_seconds\": 3e-06\n      },\n      {\n        \"phase\": \"write_payload\",\n        \"elapsed_seconds\": 0.009661\n      },\n      {\n        \"phase\": \"render_html\",\n        \"elapsed_seconds\": 0.001919\n      }\n    ],\n    \"compact_payload\": true,\n    \"pretty_payload\": false,\n    \"compress_payload\": \"off\",\n    \"payload_bytes\": 502617,\n    \"html_bytes\": 638238\n  }\n}\n",
+    "stderr": "",
+    "feature_counts": {
+      "roofline_points": 20,
+      "timeline_events": 0,
+      "cache_blocks": 80,
+      "source_files": 0,
+      "source_instructions": 0,
+      "raw_tables": 8
+    },
+    "browser": {
+      "skipped": true
+    },
+    "report": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/msopprof_complete_report.html",
+    "payload": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/report_payload.json",
+    "report_index": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_t03_complete_validation/report_index.json",
+    "available_pages": [
+      "cache",
+      "details",
+      "raw-data",
+      "roofline"
+    ],
+    "unavailable_pages": [
+      "instruction-timeline",
+      "onchip-memory",
+      "source",
+      "timeline",
+      "warp-stall"
+    ],
+    "report_bytes": 638238,
+    "payload_bytes": 502617
+  }
+}
