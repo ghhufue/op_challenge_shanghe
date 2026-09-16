@@ -2,7 +2,37 @@
 
 性能数据按 [README.md](README.md) 规定的实现版本归档。当前版本由 [CURRENT_VERSION](CURRENT_VERSION) 指向；完整测评命令见 [benchmark_workflow.md](benchmark_workflow.md)。本节只把当前版本作为有效现状，后续章节保留的早期数据均视为历史参考。
 
-## Current status: performance version [v002](versions/v002/manifest.md)
+## Current status: performance version [v003](versions/v003/manifest.md)
+
+Version status: `MEASURED` (scoped c20 msOpProf visualization round)
+
+The current worktree specializes the compile-time Matmul configuration for
+the API surface used by this operator. Bias, QuantVector, and SelfDefineData
+support are disabled, and the iteration mode is restricted to `Iterate` while
+retaining UnitFlag, `SetOrgShape`, `SetTail`, `GetTensorC`, and `End`.
+
+The fresh dav-2201 build and 11 targeted hardware checks passed, including
+c20 across both dtypes and all layouts, c21 multi-core async, c22 large-K TX1,
+and t03 20-way split-N. Four interleaved 200-repeat c20 FP16 `00` rounds gave
+v002/v003 mean p50 values of 99.226/99.108 us. This 0.12% difference is below
+run-to-run variation, and the upper median p95 changed from 114.931 to
+116.241 us. The change therefore has no demonstrated end-to-end benefit.
+
+A scoped msOpProf visualization collection is archived as
+[round_001](versions/v003/round_001/summary.txt). Without rebuilding, it
+produced real Details, Roofline, Cache, and Raw Data pages for c20 key 121.
+The AIC detail payload reports 32.739 us, Scalar 88.91%, MTE2 66.79%, FIXP
+65.90%, and Cube 4.31%. The result still indicates a Scalar-dominated,
+single-Cube-core path; the specialized configuration has not demonstrated an
+end-to-end improvement.
+
+The remaining report tabs are explicit diagnostic pages: the installed CLI
+lacks PipeTimeline and PCSampling, the existing binary has no `.debug_line`,
+no `memory_info.json` exists, and the TimelineDetail collection contained no
+semantically usable instruction events. This scoped round does not replace a
+future standard seven-group regression comparison.
+
+## Previous scoped experiment: performance version [v002](versions/v002/manifest.md)
 
 Version status: `MEASURED` (scoped c20 experiment)
 

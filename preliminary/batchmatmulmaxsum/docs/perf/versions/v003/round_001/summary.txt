@@ -1,0 +1,68 @@
+=== v003 round_001: c20 msOpProf visualization ===
+
+Implementation:
+  Base commit: 6bf577a9f6c68f9552f6ac4245eebd01164a629e
+  Core diff SHA-256: b37c9878f24103a2907aaf62d7694c7289cdbb6e99e48ac32cc756da06f003d2
+  Performance version: v003
+
+Environment:
+  Device: Ascend 910
+  CANN: 9.0.0
+  ASC architecture: dav-2201
+  Device state: healthy, no competing NPU process
+  Rebuild during collection: no
+
+Case:
+  Shape (B,M,N,K): (1,33,513,256)
+  Dtype/layout: FP16, TX1=false, TX2=false
+  Tiling key: 121 (TileM=64, TileN=128, TileK=64)
+  Launch blocks / split-N: 1 / 1
+  Application repeats / warmups: 1 / 0
+  Profiler launch count: 1
+
+Collection:
+  BasicInfo: reused successful preflight
+  Occupancy: ok
+  Roofline: ok
+  MemoryDetail: ok
+  Raw Data: aliased from MemoryDetail
+  TimelineDetail,Default: command and artifact validation passed, but the
+    visualizer found no semantically usable instruction timeline events
+  Collection time: 153.483 s
+  Visualization time: 2.365 s
+
+Available report pages with real data:
+  Details: AIC time 32.739 us; Scalar 88.91%; MTE2 66.79%;
+    FIXP 65.90%; Cube 4.31%
+  Roofline: 7 charts, 20 measured points
+  Cache: L2 total hit rate 81.64%; iCache total hit rate 95.50%
+  Raw Data: 8 tables
+
+Diagnostic-only report pages:
+  Timeline: installed msprof CLI has no PipeTimeline/pipeTimeLine
+  Source: selected existing binary has no usable .debug_line
+  Warp Stall: installed msprof CLI has no PCSampling/PcSampling
+  On-Chip Memory: no compiler memory_info.json exists
+  Instruction Timeline: TimelineDetail output contained no usable events
+
+Validation:
+  HTML artifact: passed (197,532 bytes)
+  All nine tabs rendered: passed
+  Embedded payload and JavaScript syntax: passed
+  Render performance: 2.499 s, peak RSS 96.2 MiB
+  Overall complete-report self-check: failed as expected because five
+    requested pages have diagnostic content rather than real module data;
+    Playwright browser interaction was unavailable and skipped. The skill
+    source tree also contained Python __pycache__ entries.
+
+Artifacts:
+  msopprof_complete_report.html: self-contained interactive report
+  collection_manifest.json: collection truth source
+  report_payload.json: canonical visualization payload
+  report_index.json: rendered-page receipt
+  validation_result.json: structural and semantic validation results
+
+Scope:
+  This is a visualization-focused scoped round. It is not the standard
+  seven-group regression workflow and must not be used to claim an official
+  end-to-end speedup over v002.

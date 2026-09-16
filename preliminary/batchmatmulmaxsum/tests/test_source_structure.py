@@ -26,6 +26,12 @@ class AutoFusedSourceTests(unittest.TestCase):
             "__mix__(1, 2)",
             "KERNEL_TASK_TYPE_DEFAULT(KERNEL_TYPE_MIX_AIC_1_2)",
             "matmul::Matmul<",
+            "GetBmmsMatmulConfig",
+            "config.enableSetBias = false",
+            "config.enableQuantVector = false",
+            "config.enableSetDefineData = false",
+            "IterateMode::ITERATE_MODE_NORMAL",
+            "kBmmsMatmulConfig> matmulObj",
             "TPosition::VECIN",
             "REGIST_MATMUL_OBJ",
             "Iterate<true>",
@@ -48,6 +54,7 @@ class AutoFusedSourceTests(unittest.TestCase):
             "CrossCoreWaitFlag",
             "stageOffset",
             "nGroups",
+            "matmulObj.DisableBias()",
         ):
             self.assertNotIn(forbidden, source)
         self.assertIn("SyncAll<false>", source)

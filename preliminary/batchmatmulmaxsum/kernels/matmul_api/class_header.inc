@@ -7,6 +7,17 @@ namespace bmms {
 
 using namespace AscendC;
 
+__aicore__ inline constexpr auto GetBmmsMatmulConfig() {
+    auto config = GetNormalConfig();
+    config.enableSetBias = false;
+    config.enableQuantVector = false;
+    config.enableSetDefineData = false;
+    config.iterateMode = IterateMode::ITERATE_MODE_NORMAL;
+    return config;
+}
+
+constexpr auto kBmmsMatmulConfig = GetBmmsMatmulConfig();
+
 template<class T, bool TX1, bool TX2,
          bool VectorizedReduction, bool Async, uint32_t CBufferCount,
          uint32_t TileM, uint32_t TileN, uint32_t TileK,
@@ -24,4 +35,5 @@ public:
     using CType = MatmulType<TPosition::VECIN, CubeFormat::ND, float>;
     using BiasType = MatmulType<TPosition::GM, CubeFormat::ND, float>;
 
-    matmul::Matmul<AType, BType, CType, BiasType> matmulObj;
+    matmul::Matmul<AType, BType, CType, BiasType,
+                   kBmmsMatmulConfig> matmulObj;

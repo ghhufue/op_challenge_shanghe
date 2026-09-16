@@ -18,14 +18,13 @@
             localSums.SetValue(index, 0.0f);
         }
 
-        // The original matrix strides and bias state are invariant across
-        // every (batch, M-tile) task owned by this client.  SetOrgShape emits
-        // a KFC configuration message, so keep it out of the hot task loop.
+        // The original matrix strides are invariant across every
+        // (batch, M-tile) task owned by this client. SetOrgShape emits a KFC
+        // configuration message, so keep it out of the hot task loop.
         matmulObj.SetOrgShape(
             static_cast<int>(shape.m), static_cast<int>(shape.n),
             static_cast<int>(shape.k), static_cast<int>(shape.k),
             static_cast<int>(shape.n));
-        matmulObj.DisableBias();
 
         for (uint64_t task = logicalCore; task < taskCount;
              task += cubeBlocks) {
