@@ -1,0 +1,30 @@
+{
+  "html": "msopprof_complete_report.html",
+  "payload": "report_payload.json",
+  "requested_pages": [
+    "details",
+    "roofline",
+    "timeline",
+    "cache",
+    "onchip-memory",
+    "source",
+    "warp-stall",
+    "instruction-timeline",
+    "raw-data"
+  ],
+  "rendered_pages": [
+    "details",
+    "roofline",
+    "timeline",
+    "cache",
+    "onchip-memory",
+    "source",
+    "warp-stall",
+    "instruction-timeline",
+    "raw-data"
+  ],
+  "omitted_modules": [],
+  "unavailable_policy": "explain",
+  "timing": "_internal/visualization_timing.json",
+  "compact_payload": true
+}

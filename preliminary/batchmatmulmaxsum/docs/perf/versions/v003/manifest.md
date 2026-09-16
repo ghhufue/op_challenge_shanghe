@@ -2,7 +2,7 @@
 
 ## Status
 
-`MEASURED` (scoped c20 and t03 msOpProf visualization rounds)
+`MEASURED` (scoped c20, t03, and balanced-large msOpProf visualization rounds)
 
 ## Implementation identity
 
@@ -24,6 +24,7 @@ No earlier performance rounds were copied into this version.
 |---|---|---|
 | [round_001](round_001/summary.txt) | `(1,33,513,256)`, FP16 `00`, key 121 | Complete msOpProf visualization using the existing v003 binary, without rebuilding |
 | [round_002](round_002/summary.txt) | `(1,1,8192,8192)`, FP16 `00`, key 130 | Complete msOpProf visualization of the 20-way split-N large case, without rebuilding |
+| [round_003](round_003/summary.txt) | `(4,512,512,512)`, FP16 `00`, key 121 | Complete msOpProf visualization of a dimension-balanced large case, without rebuilding |
 
 ## Validation and scope
 
@@ -39,7 +40,7 @@ robust latency change. The v002/v003 mean p50 values were 99.226/99.108 us
 median p95 changed from 114.931 to 116.241 us. The full seven-group profiler
 gate was therefore not opened.
 
-Rounds 001 and 002 are scoped visualization collections, not the standard
+Rounds 001 through 003 are scoped visualization collections, not the standard
 seven-group regression workflow. They produced real Details, Roofline,
 Cache, and Raw Data pages. Timeline, Source, Warp Stall, On-Chip Memory, and
 Instruction Timeline remain diagnostic pages because the installed CLI or
@@ -53,3 +54,4 @@ existing non-debug build did not provide their required semantic payloads.
 | 2026-09-17 | Recorded fresh build, 11 targeted hardware checks, and the inconclusive c20 host gate. |
 | 2026-09-17 | Archived scoped c20 msOpProf visualization round 001 and marked v003 `MEASURED`. |
 | 2026-09-17 | Archived large t03 20-way split-N visualization round 002. |
+| 2026-09-17 | Archived balanced `(4,512,512,512)` visualization round 003. |

@@ -1,0 +1,89 @@
+=== v003 round_003: balanced large-case msOpProf visualization ===
+
+Implementation:
+  Core implementation commit: 97d36dd
+  Core diff SHA-256: b37c9878f24103a2907aaf62d7694c7289cdbb6e99e48ac32cc756da06f003d2
+  Performance version: v003
+
+Environment:
+  Device: Ascend 910
+  CANN: 9.0.0
+  ASC architecture: dav-2201
+  Device state: healthy, no competing NPU process
+  Rebuild during collection: no
+
+Case:
+  Shape (B,M,N,K): (4,512,512,512)
+  Mathematical work: 536,870,912 multiply-accumulates
+  Dtype/layout: FP16, TX1=false, TX2=false
+  Input pattern: normalized, deterministic seed
+  Tiling key: 121 (TileM=64, TileN=128, TileK=64)
+  Launch blocks / split-N: 20 / 1
+  M groups per batch / total M tasks: 8 / 32
+  Application repeats / warmups: 1 / 0
+  Profiler launch count: 1
+
+Correctness canary:
+  Result: PASS
+  Maximum absolute error: 7.62939453125e-06
+  Inputs unchanged: yes
+
+Collection:
+  BasicInfo: reused successful preflight
+  Occupancy: ok
+  Roofline: ok
+  MemoryDetail: ok
+  Raw Data: aliased from MemoryDetail
+  TimelineDetail,Default: command and artifact validation passed, but the
+    visualizer found no semantically usable instruction timeline events
+  Collection time: 40.019 s
+  Visualization time: 3.488 s
+
+Available report pages with real data:
+  Details:
+    Task Duration: 47.361 us
+    AIC block time min / avg / max: 27.856 / 38.049 / 45.681 us
+    AIC imbalance (max-min)/max: 39.02%
+    Mean AIC pipe ratios: Scalar 72.99%; MTE2 47.60%;
+      MTE1 24.04%; FIXP 51.38%; Cube/MAC active 11.05%
+  Roofline: 7 charts, 20 measured points
+  Cache:
+    Mean Cube L2 hit rate: 92.95% (range 75.25%-96.05%)
+  Raw Data: 8 tables
+
+Interpretation:
+  This balanced large case avoids an extreme M, N, or K dimension and follows
+  the ordinary key-121 Matmul path. The 32 static (batch, M-group) tasks are
+  not divisible by 20 blocks: cores 0-11 execute two tasks while cores 12-19
+  execute one. The profiler therefore shows a clear two-tier duration pattern
+  and a 39.02% block-time spread. This is a task-count scheduling imbalance,
+  not a split-N tail or a pathological M=1 padding case.
+
+Diagnostic-only report pages:
+  Timeline: installed msprof CLI has no PipeTimeline/pipeTimeLine
+  Source: selected existing binary has no usable .debug_line
+  Warp Stall: installed msprof CLI has no PCSampling/PcSampling
+  On-Chip Memory: no compiler memory_info.json exists
+  Instruction Timeline: TimelineDetail output contained no usable events
+
+Validation:
+  HTML artifact: passed (641,811 bytes)
+  All nine tabs rendered: passed
+  Embedded payload and JavaScript syntax: passed
+  Render performance: 3.615 s, peak RSS 125.5 MiB
+  Overall complete-report self-check: failed as expected because five
+    requested pages have diagnostic content rather than real module data;
+    Playwright browser interaction was unavailable and skipped. The skill
+    source tree also contained Python __pycache__ entries.
+
+Artifacts:
+  msopprof_complete_report.html: self-contained interactive report
+  collection_manifest.json: collection truth source
+  report_payload.json: canonical visualization payload
+  report_index.json: rendered-page receipt
+  validation_result.json: structural and semantic validation results
+
+Scope:
+  This is a visualization-focused scoped round. It is not the standard
+  seven-group regression workflow and must not be used alone to claim an
+  official end-to-end speedup over an earlier performance version.

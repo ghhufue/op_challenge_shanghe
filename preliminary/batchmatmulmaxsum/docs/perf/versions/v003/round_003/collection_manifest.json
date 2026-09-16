@@ -1,0 +1,828 @@
+{
+  "schema": "msopprof-collection/v2",
+  "collector_version": "3.4.0",
+  "created_at": "2026-09-17T03:36:39+08:00",
+  "path_rule": "All artifact paths are POSIX-style paths relative to this manifest.",
+  "default_behavior": "No --feature means preset=complete; duplicate Default replays are automatically aliased.",
+  "preset": "complete",
+  "selection_mode": "preset",
+  "requested_features": [
+    "details",
+    "memory-detail",
+    "roofline",
+    "timeline",
+    "source",
+    "warp-stall",
+    "instruction-timeline",
+    "onchip-memory",
+    "raw-data"
+  ],
+  "supported_metrics": [
+    "ArithmeticUtilization",
+    "MemoryUB",
+    "Memory",
+    "MemoryL0",
+    "L2Cache",
+    "PipeUtilization",
+    "ResourceConflictRatio",
+    "BasicInfo",
+    "Roofline",
+    "Occupancy",
+    "TimelineDetail",
+    "KernelScale",
+    "Source",
+    "MemoryDetail",
+    "Default"
+  ],
+  "supported_options": [
+    "--help",
+    "--config",
+    "--application",
+    "--output",
+    "--aic-metrics",
+    "--kernel-name",
+    "--launch-count",
+    "--launch-skip-before-match",
+    "--replay-mode",
+    "--kill",
+    "--mstx",
+    "--mstx-include",
+    "--warm-up",
+    "--dump",
+    "--core-id"
+  ],
+  "detected_capabilities": {
+    "operator_type": "mix",
+    "debug_symbols": false,
+    "simt_evidence": false,
+    "kernel_scale_instrumentation": false
+  },
+  "build_provenance": {
+    "cmake_caches": [
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_atomic/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_cann90/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_cann900_atomic/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_npu/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_perf_latest/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_perf_v002/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_server/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      },
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_splitn_check_20260917/CMakeCache.txt",
+        "values": {
+          "CMAKE_ASC_ARCHITECTURES": "dav-2201",
+          "CMAKE_BUILD_TYPE": "Release",
+          "CMAKE_CXX_FLAGS": ""
+        }
+      }
+    ],
+    "user_build_config": {},
+    "validation_notes": [],
+    "executable_selection": {
+      "selection_mode": "explicit",
+      "selection_reason": "Selected by --app.",
+      "ambiguous": false,
+      "candidates": [
+        {
+          "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_v003_matmul_config/batch_matmul_max_sum_custom",
+          "relative_path": "build_v003_matmul_config/batch_matmul_max_sum_custom",
+          "score": null,
+          "reasons": [
+            "explicit --app"
+          ]
+        }
+      ],
+      "selected": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_v003_matmul_config/batch_matmul_max_sum_custom",
+      "application_cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+      "relative_resource_hints": {
+        "hints": [],
+        "missing_count": 0,
+        "missing": []
+      },
+      "test_like_executable_warning": null
+    }
+  },
+  "environment_context": {
+    "status": "probed",
+    "profile_path": null,
+    "profile_mode": "auto",
+    "profile_validation": {
+      "valid": false,
+      "reasons": [
+        "profile not found"
+      ],
+      "validated_at": "2026-09-17T03:35:59+08:00",
+      "method": "metadata_only"
+    },
+    "source_commands_executed": false,
+    "cli_probe_executed": true,
+    "msprof": "/home/developer/Ascend/cann-9.0.0/tools/profiler/bin/msprof",
+    "saved_environment_keys": [
+      "ASCEND_AICPU_PATH",
+      "ASCEND_HOME_PATH",
+      "ASCEND_OPP_PATH",
+      "ASCEND_RUNTIME_OPTIONS",
+      "ASCEND_TOOLKIT_HOME",
+      "ASCEND_VISIBLE_DEVICES",
+      "CMAKE_PREFIX_PATH",
+      "LD_LIBRARY_PATH",
+      "NPU_VISIBLE_DEVICES",
+      "PATH",
+      "PYTHONPATH",
+      "TOOLCHAIN_HOME"
+    ],
+    "source_commands": [],
+    "reuse_note": "A valid profile skips environment sourcing, msprof path discovery, and msprof op --help. Operator-specific discovery and payload validation still run."
+  },
+  "run_status": "completed",
+  "run_reason": null,
+  "preflight": {
+    "status": "ok",
+    "reason": null,
+    "return_code": 0,
+    "timed_out": false,
+    "elapsed_seconds": 5.704,
+    "pid": 59924,
+    "termination": {},
+    "heartbeat_count": 0,
+    "command": "/home/developer/Ascend/cann-9.0.0/tools/profiler/bin/msprof op --aic-metrics=BasicInfo --output=/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/tuning_results/msopprof_v003_balanced_large_complete/_internal/preflight_output --launch-count=1 /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_v003_matmul_config/batch_matmul_max_sum_custom 4 512 512 512 float16 0 0 /home/developer/workspace/op_challenge_shanghe/preliminary/test_data/v03_balanced_large_float16_00 1 121 0",
+    "cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+    "created_at": 1789587365.4006712,
+    "app_fingerprint": {
+      "size": 3414016,
+      "mtime_ns": 1789576822684432336
+    },
+    "finished_at": "2026-09-17T03:36:05+08:00",
+    "cache_seconds": 300,
+    "result_dir": "_internal/preflight_output/OPPROF_20260917033559_ZCKCFDJRUOIYOMWP",
+    "op_basic_info": "_internal/preflight_output/OPPROF_20260917033559_ZCKCFDJRUOIYOMWP/OpBasicInfo.csv"
+  },
+  "timeout_profile": {
+    "discovery": 180,
+    "details": 180,
+    "roofline": 300,
+    "timeline": 480,
+    "source": 360,
+    "warp_stall": 360,
+    "instruction_timeline": 480,
+    "memory_detail": 300,
+    "raw_data": 240,
+    "timeline_detail": 600,
+    "kernel_scale": 600,
+    "onchip_memory": 75
+  },
+  "executable_context": {
+    "selection_mode": "explicit",
+    "selection_reason": "Selected by --app.",
+    "ambiguous": false,
+    "candidates": [
+      {
+        "path": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_v003_matmul_config/batch_matmul_max_sum_custom",
+        "relative_path": "build_v003_matmul_config/batch_matmul_max_sum_custom",
+        "score": null,
+        "reasons": [
+          "explicit --app"
+        ]
+      }
+    ],
+    "selected": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/build_v003_matmul_config/batch_matmul_max_sum_custom",
+    "application_cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+    "relative_resource_hints": {
+      "hints": [],
+      "missing_count": 0,
+      "missing": []
+    },
+    "test_like_executable_warning": null
+  },
+  "block_directories": {
+    "discovery": "00_discovery",
+    "details": "01_details",
+    "roofline": "02_roofline",
+    "timeline": "03_timeline",
+    "source": "04_source",
+    "warp_stall": "05_warp_stall",
+    "instruction_timeline": "06_instruction_timeline",
+    "memory_detail": "07_memory_detail",
+    "raw_data": "08_raw_data",
+    "timeline_detail": "09_timeline_detail",
+    "kernel_scale": "10_kernel_scale",
+    "onchip_memory": "11_onchip_memory"
+  },
+  "feature_to_block": {
+    "details": "details",
+    "occupancy": "details",
+    "compute": "memory_detail",
+    "memory": "memory_detail",
+    "cache": "memory_detail",
+    "advice": "memory_detail",
+    "roofline": "roofline",
+    "timeline": "timeline",
+    "source": "source",
+    "warp-stall": "warp_stall",
+    "instruction-timeline": "instruction_timeline",
+    "memory-detail": "memory_detail",
+    "raw-data": "raw_data",
+    "timeline-detail": "timeline_detail",
+    "kernel-scale": "kernel_scale",
+    "onchip-memory": "onchip_memory"
+  },
+  "visualization_contract": {
+    "rule": "Read collection_manifest.json first. Resolve each visual feature only from its declared collector block(s); do not scan arbitrary directories.",
+    "feature_to_block": {
+      "details": "details",
+      "occupancy": "details",
+      "compute": "memory_detail",
+      "memory": "memory_detail",
+      "cache": "memory_detail",
+      "advice": "memory_detail",
+      "roofline": "roofline",
+      "timeline": "timeline",
+      "source": "source",
+      "warp-stall": "warp_stall",
+      "instruction-timeline": "instruction_timeline",
+      "memory-detail": "memory_detail",
+      "raw-data": "raw_data",
+      "timeline-detail": "timeline_detail",
+      "kernel-scale": "kernel_scale",
+      "onchip-memory": "onchip_memory"
+    },
+    "feature_to_blocks": {
+      "details": [
+        "details",
+        "memory_detail"
+      ],
+      "occupancy": [
+        "details"
+      ],
+      "compute": [
+        "memory_detail"
+      ],
+      "memory": [
+        "memory_detail"
+      ],
+      "cache": [
+        "memory_detail"
+      ],
+      "advice": [
+        "memory_detail"
+      ],
+      "roofline": [
+        "roofline"
+      ],
+      "timeline": [
+        "timeline"
+      ],
+      "source": [
+        "source"
+      ],
+      "warp-stall": [
+        "warp_stall"
+      ],
+      "instruction-timeline": [
+        "instruction_timeline"
+      ],
+      "memory-detail": [
+        "memory_detail"
+      ],
+      "raw-data": [
+        "raw_data"
+      ],
+      "timeline-detail": [
+        "timeline_detail"
+      ],
+      "kernel-scale": [
+        "kernel_scale"
+      ],
+      "onchip-memory": [
+        "onchip_memory"
+      ]
+    },
+    "features": {
+      "occupancy": {
+        "block": "details",
+        "artifact": "visualize_data"
+      },
+      "compute": {
+        "block": "memory_detail",
+        "artifact": "visualize_data"
+      },
+      "memory": {
+        "block": "memory_detail",
+        "artifact": "visualize_data"
+      },
+      "cache": {
+        "block": "memory_detail",
+        "artifact": "visualize_data"
+      },
+      "advice": {
+        "block": "memory_detail",
+        "artifact": "visualize_data"
+      },
+      "roofline": {
+        "block": "roofline",
+        "artifact": "visualize_data"
+      },
+      "timeline": {
+        "block": "timeline",
+        "artifact": "trace",
+        "fallback_artifact": "visualize_data"
+      },
+      "source": {
+        "block": "source",
+        "artifact": "visualize_data",
+        "optional_supplemental_block": "warp_stall",
+        "supplemental_artifact": "visualize_data",
+        "fusion_key": "validated path+line and instruction address"
+      },
+      "warp-stall": {
+        "block": "warp_stall",
+        "artifact": "visualize_data"
+      },
+      "instruction-timeline": {
+        "block": "instruction_timeline",
+        "artifact": "visualize_data"
+      },
+      "memory-detail": {
+        "block": "memory_detail",
+        "artifact": "visualize_data"
+      },
+      "raw-data": {
+        "block": "raw_data",
+        "artifact": "csv"
+      },
+      "timeline-detail": {
+        "block": "timeline_detail",
+        "artifact": "visualize_data"
+      },
+      "kernel-scale": {
+        "block": "kernel_scale",
+        "artifact": "visualize_data"
+      },
+      "onchip-memory": {
+        "block": "onchip_memory",
+        "artifact": "memory_info"
+      }
+    }
+  },
+  "blocks": {
+    "discovery": {
+      "block_id": "discovery",
+      "display_name": "Discovery",
+      "metric": "BasicInfo",
+      "status": "reused",
+      "reason": "Promoted the successful BasicInfo preflight result; no second BasicInfo replay was needed.",
+      "requested_by": [
+        "discovery"
+      ],
+      "relative_dir": "00_discovery",
+      "result_dir": "00_discovery/OPPROF_20260917033559_ZCKCFDJRUOIYOMWP",
+      "artifacts": {
+        "visualize_data": "00_discovery/OPPROF_20260917033559_ZCKCFDJRUOIYOMWP/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "OpBasicInfo.csv": "00_discovery/OPPROF_20260917033559_ZCKCFDJRUOIYOMWP/OpBasicInfo.csv"
+        }
+      },
+      "visual_features": [],
+      "elapsed_seconds": 0.0,
+      "return_code": 0,
+      "provider": "preflight_canary",
+      "collection_passes_saved": 1
+    },
+    "details": {
+      "block_id": "details",
+      "display_name": "Details",
+      "metric": "Occupancy",
+      "status": "ok",
+      "reason": null,
+      "requested_by": [
+        "details"
+      ],
+      "relative_dir": "01_details",
+      "result_dir": "01_details/OPPROF_20260917033606_EVLLDWENAEPZJWZH",
+      "artifacts": {
+        "visualize_data": "01_details/OPPROF_20260917033606_EVLLDWENAEPZJWZH/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "OpBasicInfo.csv": "01_details/OPPROF_20260917033606_EVLLDWENAEPZJWZH/OpBasicInfo.csv"
+        }
+      },
+      "visual_features": [
+        "occupancy"
+      ],
+      "elapsed_seconds": 6.004,
+      "return_code": 0,
+      "timed_out": false,
+      "termination": {},
+      "heartbeat_count": 0,
+      "pid": 60009,
+      "cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+      "timeout_seconds": 180,
+      "logs": {
+        "stdout": "_internal/logs/details.stdout.log",
+        "stderr": "_internal/logs/details.stderr.log"
+      },
+      "diagnostic_warnings": [],
+      "coverage": {
+        "visualize_data": true,
+        "trace_events": 0,
+        "csv_count": 1,
+        "occupancy": true,
+        "compute_memory": true
+      },
+      "attempts": [
+        {
+          "metric": "Occupancy",
+          "status": "ok",
+          "return_code": 0,
+          "coverage": {
+            "visualize_data": true,
+            "trace_events": 0,
+            "csv_count": 1,
+            "occupancy": true,
+            "compute_memory": true
+          },
+          "timed_out": false
+        }
+      ],
+      "preferred_metric": "Occupancy",
+      "fallback_used": false
+    },
+    "roofline": {
+      "block_id": "roofline",
+      "display_name": "Roofline",
+      "metric": "Roofline",
+      "status": "ok",
+      "reason": null,
+      "requested_by": [
+        "roofline"
+      ],
+      "relative_dir": "02_roofline",
+      "result_dir": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB",
+      "artifacts": {
+        "visualize_data": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "ArithmeticUtilization.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/ArithmeticUtilization.csv",
+          "L2Cache.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/L2Cache.csv",
+          "Memory.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/Memory.csv",
+          "MemoryL0.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/MemoryL0.csv",
+          "MemoryUB.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/MemoryUB.csv",
+          "OpBasicInfo.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/OpBasicInfo.csv",
+          "PipeUtilization.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/PipeUtilization.csv",
+          "ResourceConflictRatio.csv": "02_roofline/OPPROF_20260917033612_YLUJFXGWXTZKMWZB/ResourceConflictRatio.csv"
+        }
+      },
+      "visual_features": [
+        "roofline"
+      ],
+      "elapsed_seconds": 6.004,
+      "return_code": 0,
+      "timed_out": false,
+      "termination": {},
+      "heartbeat_count": 0,
+      "pid": 60122,
+      "cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+      "timeout_seconds": 300,
+      "logs": {
+        "stdout": "_internal/logs/roofline.stdout.log",
+        "stderr": "_internal/logs/roofline.stderr.log"
+      },
+      "diagnostic_warnings": [],
+      "coverage": {
+        "visualize_data": true,
+        "trace_events": 0,
+        "csv_count": 8,
+        "roofline_structure": true,
+        "default_csv_suite": true
+      },
+      "attempts": [
+        {
+          "metric": "Roofline",
+          "status": "ok",
+          "return_code": 0,
+          "coverage": {
+            "visualize_data": true,
+            "trace_events": 0,
+            "csv_count": 8,
+            "roofline_structure": true,
+            "default_csv_suite": true
+          },
+          "timed_out": false
+        }
+      ],
+      "preferred_metric": "Roofline",
+      "fallback_used": false
+    },
+    "timeline": {
+      "block_id": "timeline",
+      "display_name": "Pipe Timeline",
+      "metric": null,
+      "status": "unavailable",
+      "reason": "Installed msprof op CLI exposes none of: PipeTimeline, pipeTimeLine.",
+      "requested_by": [
+        "timeline"
+      ],
+      "relative_dir": "03_timeline",
+      "result_dir": null,
+      "artifacts": {
+        "visualize_data": null,
+        "trace": null,
+        "csv": {}
+      },
+      "visual_features": [
+        "timeline"
+      ],
+      "elapsed_seconds": 0.0,
+      "return_code": null
+    },
+    "source": {
+      "block_id": "source",
+      "display_name": "Source Hotspot",
+      "metric": null,
+      "status": "unavailable",
+      "reason": "Usable .debug_line information was not detected in the selected executable build tree. Rebuild the exact selected executable/kernel with -g, or pass --debug-rebuild-command so the collector can rebuild conditionally before Source collection.",
+      "requested_by": [
+        "source"
+      ],
+      "relative_dir": "04_source",
+      "result_dir": null,
+      "artifacts": {
+        "visualize_data": null,
+        "trace": null,
+        "csv": {}
+      },
+      "visual_features": [
+        "source"
+      ],
+      "elapsed_seconds": 0.0,
+      "return_code": null
+    },
+    "warp_stall": {
+      "block_id": "warp_stall",
+      "display_name": "Warp Stall",
+      "metric": null,
+      "status": "unavailable",
+      "reason": "Installed msprof op CLI exposes none of: PCSampling, PcSampling.",
+      "requested_by": [
+        "warp-stall",
+        "source:optional-stall-augmentation"
+      ],
+      "relative_dir": "05_warp_stall",
+      "result_dir": null,
+      "artifacts": {
+        "visualize_data": null,
+        "trace": null,
+        "csv": {}
+      },
+      "visual_features": [
+        "warp-stall"
+      ],
+      "elapsed_seconds": 0.0,
+      "return_code": null
+    },
+    "instruction_timeline": {
+      "block_id": "instruction_timeline",
+      "display_name": "Instruction Timeline",
+      "metric": "TimelineDetail,Default",
+      "status": "ok",
+      "reason": null,
+      "requested_by": [
+        "instruction-timeline"
+      ],
+      "relative_dir": "06_instruction_timeline",
+      "result_dir": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV",
+      "artifacts": {
+        "visualize_data": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "ArithmeticUtilization.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/ArithmeticUtilization.csv",
+          "L2Cache.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/L2Cache.csv",
+          "Memory.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/Memory.csv",
+          "MemoryL0.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/MemoryL0.csv",
+          "MemoryUB.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/MemoryUB.csv",
+          "OpBasicInfo.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/OpBasicInfo.csv",
+          "PipeUtilization.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/PipeUtilization.csv",
+          "ResourceConflictRatio.csv": "06_instruction_timeline/OPPROF_20260917033618_BBMJFFGQHJEUQLDV/ResourceConflictRatio.csv"
+        }
+      },
+      "visual_features": [
+        "instruction-timeline"
+      ],
+      "elapsed_seconds": 6.104,
+      "return_code": 0,
+      "timed_out": false,
+      "termination": {},
+      "heartbeat_count": 0,
+      "pid": 60229,
+      "cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+      "timeout_seconds": 480,
+      "logs": {
+        "stdout": "_internal/logs/instruction_timeline_attempt_01_timelinedetaildefault.stdout.log",
+        "stderr": "_internal/logs/instruction_timeline_attempt_01_timelinedetaildefault.stderr.log"
+      },
+      "diagnostic_warnings": [],
+      "coverage": {
+        "visualize_data": true,
+        "trace_events": 0,
+        "csv_count": 8,
+        "instruction_timeline": true
+      },
+      "attempts": [
+        {
+          "metric": "TimelineDetail,Default",
+          "status": "ok",
+          "return_code": 0,
+          "coverage": {
+            "visualize_data": true,
+            "trace_events": 0,
+            "csv_count": 8,
+            "instruction_timeline": true
+          },
+          "timed_out": false
+        }
+      ],
+      "preferred_metric": "TimelineDetail,Default",
+      "fallback_used": false
+    },
+    "memory_detail": {
+      "block_id": "memory_detail",
+      "display_name": "Memory Detail",
+      "metric": "MemoryDetail",
+      "status": "ok",
+      "reason": null,
+      "requested_by": [
+        "details",
+        "memory-detail"
+      ],
+      "relative_dir": "07_memory_detail",
+      "result_dir": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN",
+      "artifacts": {
+        "visualize_data": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "ArithmeticUtilization.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/ArithmeticUtilization.csv",
+          "L2Cache.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/L2Cache.csv",
+          "Memory.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/Memory.csv",
+          "MemoryL0.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/MemoryL0.csv",
+          "MemoryUB.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/MemoryUB.csv",
+          "OpBasicInfo.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/OpBasicInfo.csv",
+          "PipeUtilization.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/PipeUtilization.csv",
+          "ResourceConflictRatio.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/ResourceConflictRatio.csv"
+        }
+      },
+      "visual_features": [
+        "compute",
+        "memory",
+        "cache",
+        "advice",
+        "memory-detail"
+      ],
+      "elapsed_seconds": 15.31,
+      "return_code": 0,
+      "timed_out": false,
+      "termination": {},
+      "heartbeat_count": 0,
+      "pid": 60321,
+      "cwd": "/home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum",
+      "timeout_seconds": 300,
+      "logs": {
+        "stdout": "_internal/logs/memory_detail_attempt_01_memorydetail.stdout.log",
+        "stderr": "_internal/logs/memory_detail_attempt_01_memorydetail.stderr.log"
+      },
+      "diagnostic_warnings": [],
+      "coverage": {
+        "visualize_data": true,
+        "trace_events": 0,
+        "csv_count": 8,
+        "default_csv_suite": true,
+        "memory_detail": true
+      },
+      "attempts": [
+        {
+          "metric": "MemoryDetail",
+          "status": "ok",
+          "return_code": 0,
+          "coverage": {
+            "visualize_data": true,
+            "trace_events": 0,
+            "csv_count": 8,
+            "default_csv_suite": true,
+            "memory_detail": true
+          },
+          "timed_out": false
+        }
+      ],
+      "preferred_metric": "MemoryDetail",
+      "fallback_used": false
+    },
+    "raw_data": {
+      "block_id": "raw_data",
+      "display_name": "Raw Data",
+      "metric": "MemoryDetail",
+      "status": "aliased",
+      "reason": "Reused artifacts from block 'memory_detail'.",
+      "requested_by": [
+        "raw-data"
+      ],
+      "relative_dir": "08_raw_data",
+      "result_dir": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN",
+      "provider_block": "memory_detail",
+      "artifacts": {
+        "visualize_data": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/visualize_data.bin",
+        "trace": null,
+        "csv": {
+          "ArithmeticUtilization.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/ArithmeticUtilization.csv",
+          "L2Cache.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/L2Cache.csv",
+          "Memory.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/Memory.csv",
+          "MemoryL0.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/MemoryL0.csv",
+          "MemoryUB.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/MemoryUB.csv",
+          "OpBasicInfo.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/OpBasicInfo.csv",
+          "PipeUtilization.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/PipeUtilization.csv",
+          "ResourceConflictRatio.csv": "07_memory_detail/OPPROF_20260917033624_IUHWAHQRRIQTRGRN/ResourceConflictRatio.csv"
+        }
+      },
+      "visual_features": [
+        "raw-data"
+      ],
+      "elapsed_seconds": 0.0,
+      "return_code": null,
+      "coverage": {
+        "visualize_data": true,
+        "trace_events": 0,
+        "csv_count": 8,
+        "default_csv_suite": true
+      }
+    },
+    "onchip_memory": {
+      "block_id": "onchip_memory",
+      "display_name": "On-Chip Memory",
+      "metric": null,
+      "status": "unavailable",
+      "reason": "No memory_info.json was found in the selected operator project/build tree. Generate the compiler sidecar before requesting On-Chip Memory.",
+      "requested_by": [
+        "onchip-memory"
+      ],
+      "relative_dir": "11_onchip_memory",
+      "result_dir": null,
+      "artifacts": {
+        "visualize_data": null,
+        "trace": null,
+        "csv": {}
+      },
+      "visual_features": [
+        "onchip-memory"
+      ],
+      "elapsed_seconds": 0.0,
+      "return_code": null
+    }
+  }
+}

@@ -4,7 +4,7 @@
 
 ## Current status: performance version [v003](versions/v003/manifest.md)
 
-Version status: `MEASURED` (scoped c20 and t03 msOpProf visualization rounds)
+Version status: `MEASURED` (scoped c20, t03, and balanced-large msOpProf visualization rounds)
 
 The current worktree specializes the compile-time Matmul configuration for
 the API surface used by this operator. Bias, QuantVector, and SelfDefineData
@@ -34,6 +34,16 @@ AIC blocks, the pipe ratios are Scalar 52.80%, MTE2 66.26%, FIXP 4.32%, and
 Cube/MAC active 3.34%. This confirms that split-N fills and balances the card,
 while useful Cube issue remains low; these pipe ratios must not be confused
 with global Cube-core occupancy.
+
+A dimension-balanced large case is archived as
+[round_003](versions/v003/round_003/summary.txt). The shape
+`(4,512,512,512)` uses key 121, 20 blocks, and no split-N. Task Duration is
+47.361 us. The 32 `(batch, M-group)` tasks are distributed statically across
+20 blocks, so cores 0-11 execute two tasks while cores 12-19 execute one;
+their AIC times form two groups and range from 27.856 to 45.681 us. This
+39.02% spread identifies ordinary multi-task scheduling imbalance without
+the extreme M=1 padding of t03. Mean AIC pipe ratios are Scalar 72.99%, MTE2
+47.60%, FIXP 51.38%, and Cube/MAC active 11.05%.
 
 The remaining report tabs are explicit diagnostic pages: the installed CLI
 lacks PipeTimeline and PCSampling, the existing binary has no `.debug_line`,
