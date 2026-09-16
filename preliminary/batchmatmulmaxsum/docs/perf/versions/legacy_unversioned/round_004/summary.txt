@@ -48,7 +48,7 @@ Type: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj64ELj128ELj64
   Top-3 快核: Core6=12.32us, Core21=12.80us, Core20=12.94us
 
 --- 原始数据位置 ---
-  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/round_004/
+  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/versions/legacy_unversioned/round_004/
   原始 PROF: /tmp/bmms_msprof_c21_key121/PROF_GROUP_20260913_231658/
   按 aic-metrics 拆分的 op_summary_<Metric>.csv 均已复制到归档目录，
   如需逐列查看可直接 Read。

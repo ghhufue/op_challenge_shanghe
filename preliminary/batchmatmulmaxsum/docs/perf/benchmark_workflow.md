@@ -1,6 +1,6 @@
 # BatchMatmulMaxSum 真机性能测评流程
 
-本文给出从无上下文状态开始，对 `BatchMatmulMaxSum` 当前代码执行真机性能验收、候选策略对比、`msprof` 深度采集和回归判断的完整命令。当前性能结论维护在 [analysis.md](analysis.md)。
+本文给出从无上下文状态开始，对 `BatchMatmulMaxSum` 当前代码执行真机性能验收、候选策略对比、`msprof` 深度采集和回归判断的完整命令。开始前必须先读 [README.md](README.md) 和 [CURRENT_VERSION](CURRENT_VERSION)；当前性能结论维护在 [analysis.md](analysis.md)。
 
 ## 适用范围和固定口径
 
@@ -25,11 +25,16 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 OP_DIR="$REPO_ROOT/preliminary/batchmatmulmaxsum"
 CANN_ROOT=/home/developer/Ascend/cann-9.0.0
 BUILD_DIR="$OP_DIR/build_perf_latest"
-RESULT_DIR="$OP_DIR/tuning_results"
+PERF_DOC_DIR="$OP_DIR/docs/perf"
+PERF_VERSION=$(tr -d '\r\n' < "$PERF_DOC_DIR/CURRENT_VERSION")
+VERSION_DIR="$PERF_DOC_DIR/versions/$PERF_VERSION"
+RESULT_DIR="$OP_DIR/tuning_results/$PERF_VERSION"
 PROF_SKILL="$REPO_ROOT/.agents/skills/ops-profiling"
 
 export ASCEND_HOME_PATH="$CANN_ROOT"
 source "$CANN_ROOT/set_env.sh"
+[[ "$PERF_VERSION" =~ ^v[0-9]{3}$ ]]
+test -f "$VERSION_DIR/manifest.md"
 mkdir -p "$RESULT_DIR"
 ```
 
@@ -44,7 +49,21 @@ command -v npu-smi
 command -v msprof
 ```
 
-## 1. 固化代码和设备上下文
+## 1. 固化性能版本、代码和设备上下文
+
+首先读取当前版本及其状态：
+
+```bash
+printf 'PERF_VERSION=%s\n' "$PERF_VERSION"
+sed -n '1,120p' "$VERSION_DIR/manifest.md"
+```
+
+版本门禁：
+
+- 若本轮只是重测完全相同的核心实现，继续在当前版本下增加 round。
+- 若 `kernel.asc`、`main.asc`、`kernels/**`、`host/**`、`tiling/**`、submission、tiling 配置或影响运行行为的编译/生成逻辑发生变化，必须先把 `CURRENT_VERSION` 加一，并创建状态为 `UNMEASURED` 的新 manifest。
+- 新版本不得复制旧版本 round。测量完成前，`analysis.md` 必须明确说明当前版本暂无有效性能数据。
+- 根目录 [AGENTS.md](../../../../AGENTS.md) 对 AI agent 强制执行该门禁。
 
 先记录测试对象，避免把旧二进制、脏工作树或其他进程的影响归因到当前代码：
 
@@ -246,7 +265,7 @@ bash "$PROF_SKILL/scripts/msprof_profile_run.sh" \
   "$REPO_ROOT/preliminary/test_data/t03_max_nk_float16_00" 1
 ```
 
-### 5.4 解析并归档到 `docs/perf/round_NNN`
+### 5.4 解析并归档到当前版本的 `round_NNN`
 
 ```bash
 C21_GROUP=$(find "$PROF_ROOT/c21" -maxdepth 1 -type d \
@@ -256,12 +275,41 @@ C20_GROUP=$(find "$PROF_ROOT/c20" -maxdepth 1 -type d \
 T03_GROUP=$(find "$PROF_ROOT/t03" -maxdepth 1 -type d \
   -name 'PROF_GROUP_*' | sort | tail -n1)
 
-python3 "$PROF_SKILL/scripts/msprof_perf_summary.py" "$C21_GROUP" "$OP_DIR"
-python3 "$PROF_SKILL/scripts/msprof_perf_summary.py" "$C20_GROUP" "$OP_DIR"
-python3 "$PROF_SKILL/scripts/msprof_perf_summary.py" "$T03_GROUP" "$OP_DIR"
+archive_prof_group() {
+  PROF_GROUP_PATH=$1
+  ARCHIVE_STAGE=$(mktemp -d /tmp/bmms_prof_archive_XXXXXX)
+
+  # The shared parser always writes <ops_dir>/docs/perf/round_NNN, so parse in
+  # an isolated staging root and then place the result under this version.
+  python3 "$PROF_SKILL/scripts/msprof_perf_summary.py" \
+    "$PROF_GROUP_PATH" "$ARCHIVE_STAGE"
+
+  LAST_ROUND=$(find "$VERSION_DIR" -maxdepth 1 -type d \
+    -name 'round_[0-9][0-9][0-9]' -printf '%f\n' \
+    | sed 's/^round_//' | sort -n | tail -n1)
+  if [ -n "$LAST_ROUND" ]; then
+    NEXT_ROUND=$((10#$LAST_ROUND + 1))
+  else
+    NEXT_ROUND=1
+  fi
+  ROUND_NAME=$(printf 'round_%03d' "$NEXT_ROUND")
+  test ! -e "$VERSION_DIR/$ROUND_NAME"
+
+  mv "$ARCHIVE_STAGE/docs/perf/round_001" "$VERSION_DIR/$ROUND_NAME"
+  sed -i \
+    "s|$ARCHIVE_STAGE/docs/perf/round_001/|$VERSION_DIR/$ROUND_NAME/|" \
+    "$VERSION_DIR/$ROUND_NAME/summary.txt"
+  find "$VERSION_DIR/$ROUND_NAME" -type f -name '*.csv' \
+    -exec sed -i 's/[[:space:]]*$//' {} +
+  printf 'Archived %s\n' "$VERSION_DIR/$ROUND_NAME"
+}
+
+archive_prof_group "$C21_GROUP"
+archive_prof_group "$C20_GROUP"
+archive_prof_group "$T03_GROUP"
 ```
 
-解析器会自动创建连续的 `round_NNN`。归档完成后，立即在 [analysis.md](analysis.md) 中记录每个 round 对应的 commit、shape、dtype、布局和 tiling key，不能只留下无语义的轮次编号。
+上述包装流程会在当前 `VERSION_DIR` 中创建连续的 `round_NNN`。归档完成后，立即在该版本的 `manifest.md` 中记录 commit、shape、dtype、布局、tiling key 和 round 映射；全部验收完成后将状态从 `UNMEASURED` 改为 `MEASURED`，并更新 [analysis.md](analysis.md)。
 
 ## 6. 深度指标判定规则
 
@@ -296,7 +344,9 @@ python3 "$PROF_SKILL/scripts/msprof_perf_summary.py" "$T03_GROUP" "$OP_DIR"
 绝对耗时会受 DVFS、设备温度和其他系统负载影响。判断最新提交是否回退时，应在同一时段编译上一提交并交替测量，而不是直接与历史文档数字比较。
 
 ```bash
-BASE_COMMIT=$(git rev-parse HEAD^)
+# 从上一性能版本的 manifest 读取 Core implementation commit。
+# v001 建立时使用 5e38cba；后续版本不要简单假设 HEAD^ 是核心基线。
+BASE_COMMIT=5e38cba
 PREV_DIR=$(mktemp -d /tmp/bmms_prev_XXXXXX)
 
 git archive "$BASE_COMMIT" | tar -x -C "$PREV_DIR"
@@ -330,18 +380,20 @@ npu-smi info
 一次完整测评应留下：
 
 - commit、CANN、SoC、Cube Core 数和设备空闲状态。
+- `CURRENT_VERSION`、版本 manifest 状态和核心 commit。
 - 静态测试与构建结果。
 - `latest_default_perf.json` 的通过数和代表性 p50/p95。
 - 候选 key 的同条件加速比。
-- 三个新 `round_NNN` 的映射和瓶颈判定。
+- 当前版本目录下三个新 `round_NNN` 的映射和瓶颈判定。
 - 与上一提交的同机回归结论。
 - 当前未测内容，例如官方拆分算子基线或官方隐藏测试点。
 - 更新后的 [analysis.md](analysis.md)。
 
-不要提交 `build_perf_latest`、`preliminary/test_data`、`tuning_results` 或原始 `PROF_GROUP_*`；它们均是可再生临时产物。需要长期保留的 profiler 摘要和筛选后的 CSV 由解析器归档到 `docs/perf/round_NNN`。
+不要提交 `build_perf_latest`、`preliminary/test_data`、`tuning_results` 或原始 `PROF_GROUP_*`；它们均是可再生临时产物。需要长期保留的 profiler 摘要和筛选后的 CSV 只能归档到 `docs/perf/versions/$PERF_VERSION/round_NNN`。
 
 ## 修订记录
 
 | 日期 | 基线提交 | 说明 |
 |---|---|---|
+| 2026-09-16 | `v001` | 引入性能实现版本门禁、版本 manifest 和版本内 round 归档流程。 |
 | 2026-09-16 | `7caae52` | 根据实际真机流程固化环境检查、全新构建、48 组稳态测量、候选对照、三类 `msprof` 深度采集和同机回归方法。 |

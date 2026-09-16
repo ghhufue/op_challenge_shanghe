@@ -51,7 +51,7 @@ Type: _ZN4bmms26BatchMatmulMaxSumAutoFusedIDhLb0ELb0ELb1ELb1ELj2ELj64ELj128ELj64
          疑似两簇 (NUMA / L2 slice) 负载偏斜，建议尝试 block swat / 尾轮均衡策略。
 
 --- 原始数据位置 ---
-  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/round_006/
+  归档 CSV : /home/developer/workspace/op_challenge_shanghe/preliminary/batchmatmulmaxsum/docs/perf/versions/legacy_unversioned/round_006/
   原始 PROF: /tmp/bmms_msprof_c20_key130_final/PROF_GROUP_20260914_120703/
   按 aic-metrics 拆分的 op_summary_<Metric>.csv 均已复制到归档目录，
   如需逐列查看可直接 Read。

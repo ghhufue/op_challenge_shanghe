@@ -1,8 +1,12 @@
 # BatchMatmulMaxSum performance status and history
 
-当前可复现的完整测评命令见 [benchmark_workflow.md](benchmark_workflow.md)。本节首先维护最新代码的性能状态，后续章节保留 2026-09-14 的历史优化记录。
+性能数据按 [README.md](README.md) 规定的实现版本归档。当前版本由 [CURRENT_VERSION](CURRENT_VERSION) 指向；完整测评命令见 [benchmark_workflow.md](benchmark_workflow.md)。本节只把当前版本作为有效现状，后续章节保留的早期数据均视为历史参考。
 
-## Current status: commit `7caae52`
+## Current status: performance version [v001](versions/v001/manifest.md)
+
+Core implementation commit: `7caae52`
+
+Version status: `MEASURED`
 
 Measurement date: 2026-09-16
 
@@ -51,11 +55,11 @@ The submission thresholds choose the correct strategy for these three representa
 
 The following rounds were captured from commit `7caae52` with the standard `ops-profiling` flow: 3 warm-ups, seven `aic-metrics` groups, and one sample-based per-core collection.
 
-| Round | Shape / key | Task Duration | Dominant AIC pipes | Cube utilization | Core imbalance | Strict bound |
+| Version round | Shape / key | Task Duration | Dominant AIC pipes | Cube utilization | Core imbalance | Strict bound |
 |---|---|---:|---|---:|---:|---|
-| [round_008](round_008/summary.txt) | `(4,128,128,128)`, key 121 | 16.100 us | Scalar 79.9%, FIXP 26.8%, MTE2 24.5% | 35.99% | 16.08% | No strict bound; borderline Scalar |
-| [round_009](round_009/summary.txt) | `(1,33,513,256)`, key 121 | 34.260 us | Scalar 93.8%, MTE2 75.6%, FIXP 74.3% | 4.94% | n/a, one core | **Scalar Bound** |
-| [round_010](round_010/summary.txt) | `(1,1,8192,8192)`, key 130 | 452.940 us | MTE2 66.1%, Scalar 53.6%, FIXP 4.4% | 99.08% | 0.97% | No strict bound |
+| [v001/round_001](versions/v001/round_001/summary.txt) | `(4,128,128,128)`, key 121 | 16.100 us | Scalar 79.9%, FIXP 26.8%, MTE2 24.5% | 35.99% | 16.08% | No strict bound; borderline Scalar |
+| [v001/round_002](versions/v001/round_002/summary.txt) | `(1,33,513,256)`, key 121 | 34.260 us | Scalar 93.8%, MTE2 75.6%, FIXP 74.3% | 4.94% | n/a, one core | **Scalar Bound** |
+| [v001/round_003](versions/v001/round_003/summary.txt) | `(1,1,8192,8192)`, key 130 | 452.940 us | MTE2 66.1%, Scalar 53.6%, FIXP 4.4% | 99.08% | 0.97% | No strict bound |
 
 Interpretation:
 
@@ -100,7 +104,8 @@ All changes are within normal run-to-run variation. The source-layout refactor i
 
 | Date | Commit | Change |
 |---|---|---|
-| 2026-09-16 | `7caae52` | Added the current 48-case hardware sample, candidate comparisons, rounds 008-010, layout sensitivity, and same-machine regression result. |
+| 2026-09-16 | `v001` | Introduced implementation-versioned storage; current measurements are now v001 rounds 001-003 and pre-version measurements are explicitly legacy. |
+| 2026-09-16 | `7caae52` | Added the current 48-case hardware sample, candidate comparisons, the three measurements now stored as v001 rounds 001-003, layout sensitivity, and same-machine regression result. |
 | 2026-09-14 | `5e38cba` and earlier | Recorded correctness fixes, async pipeline development, and historical split-N measurements below. |
 
 ---
@@ -200,9 +205,9 @@ than a single-core Cube throughput limit.
 
 Raw summaries:
 
-- `round_001`: key 100
-- `round_002`: key 110
-- `round_004`: key 121
+- `versions/legacy_unversioned/round_001`: key 100
+- `versions/legacy_unversioned/round_002`: key 110
+- `versions/legacy_unversioned/round_004`: key 121
 
 ### B1 M33 N513 K256
 
@@ -224,8 +229,8 @@ not only more single-core buffering.
 
 Raw summaries:
 
-- `round_003`: key 100
-- `round_005`: key 120
+- `versions/legacy_unversioned/round_003`: key 100
+- `versions/legacy_unversioned/round_005`: key 120
 
 ### Historical two-launch split-N pipeline for B1 M33 N513 K256
 
@@ -243,12 +248,13 @@ The measured implementation raised global Cube utilization from 4.95% to
 and its separate 5.680 us finalizer raised total device time to 40.320 us. These
 numbers are retained as historical evidence. The current implementation runs
 both stages in one MIX-kernel launch with an AIV software barrier. Its current
-maximum-N/K behavior is recorded in `round_010` and the current-status section.
+maximum-N/K behavior is recorded in `versions/v001/round_003` and the
+current-status section.
 
 Raw summaries:
 
-- `round_006`: key 130, including both stages
-- `round_007`: key 121 comparison baseline
+- `versions/legacy_unversioned/round_006`: key 130, including both stages
+- `versions/legacy_unversioned/round_007`: key 121 comparison baseline
 
 ## Tiling observations
 
